@@ -63,30 +63,31 @@ A comprehensive DevOps automation platform with intelligent agents for monitorin
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd devops-modules
+   git clone https://github.com/nosobasic/DevOpsModules.git
+   cd DevOpsModules
    ```
 
-2. **Install dependencies**
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Start development servers**
+3. **Configure environment**:
    ```bash
-   # Start both client and server in development mode
-   npm run dev
-   
-   # Or start them separately:
-   npm run dev:client  # Frontend only (port 5173)
-   npm run dev:server  # Backend only (port 3001)
+   cp env.production .env
+   # Edit .env with your Revenue Ripple API key and settings
    ```
 
-4. **Access the application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:3001
+4. **Start the application**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Access the dashboard**:
+   - Frontend: https://devops.revenueripple.org
+   - Backend API: https://revenueripple.org
 
 ### Production Build
 

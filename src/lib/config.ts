@@ -2,10 +2,10 @@ import type { RevenueRippleConfig, ApiKey } from '../types';
 
 // Configuration constants
 export const DEFAULT_CONFIG: RevenueRippleConfig = {
-  baseUrl: process.env.REACT_APP_REVENUE_RIPPLE_URL || 'http://localhost:3000',
+  baseUrl: process.env.REACT_APP_REVENUE_RIPPLE_URL || 'https://revenueripple.org',
   apiKey: process.env.REACT_APP_REVENUE_RIPPLE_API_KEY || '',
   webhookSecret: process.env.REACT_APP_WEBHOOK_SECRET || '',
-  adminPanelUrl: process.env.REACT_APP_ADMIN_PANEL_URL || '/admin',
+  adminPanelUrl: process.env.REACT_APP_ADMIN_PANEL_URL || 'https://revenueripple.org/admin',
   integrationMode: (process.env.REACT_APP_INTEGRATION_MODE as 'embedded' | 'standalone' | 'iframe') || 'embedded'
 };
 

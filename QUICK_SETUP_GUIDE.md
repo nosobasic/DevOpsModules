@@ -22,27 +22,19 @@ $devops_config = [
 
 ## Step 2: Configure Your DevOps Modules
 
-1. **Copy the environment template**:
+### 1. Environment Configuration
+
+1. **Copy the production environment file**:
    ```bash
-   cp .env.example .env.local
+   cp env.production .env
    ```
 
-2. **Edit `.env.local` with your settings**:
-   ```bash
-   # Replace with your actual Revenue Ripple URL
-   REACT_APP_REVENUE_RIPPLE_URL=https://your-revenue-ripple.com
-   
-   # Copy this from your Revenue Ripple admin panel
-   REACT_APP_REVENUE_RIPPLE_API_KEY=your-generated-api-key-from-step-1
-   
-   # Copy this from your Revenue Ripple admin panel  
-   REACT_APP_WEBHOOK_SECRET=your-webhook-secret-from-step-1
-   
-   # Your admin panel path (usually /wp-admin or /admin)
-   REACT_APP_ADMIN_PANEL_URL=/admin
-   
-   # How you want to integrate
-   REACT_APP_INTEGRATION_MODE=embedded
+2. **Edit `.env` with your settings**:
+   ```env
+   REACT_APP_REVENUE_RIPPLE_URL=https://revenueripple.org
+   REACT_APP_REVENUE_RIPPLE_API_KEY=rr_u_5n6KxpNEx2hsa32s3_gfGgVIo5hjfC2esJr7CBPtk
+   CLIENT_URL=https://devops.revenueripple.org
+   PORT=3001
    ```
 
 ## Step 3: Start the DevOps Modules
@@ -55,11 +47,11 @@ npm install
 npm run dev
 ```
 
-The application will be available at http://localhost:3001
+The application will be available at https://devops.revenueripple.org
 
 ## Step 4: Test the Integration
 
-1. **Open the DevOps modules dashboard** at http://localhost:3001
+1. **Open the DevOps modules dashboard** at https://devops.revenueripple.org
 2. **Complete the setup wizard** that appears on first run
 3. **Verify connection** - you should see "Connected" status in the top-right
 4. **Check the dashboard metrics** - should show sample data
@@ -118,7 +110,7 @@ Add specific widgets to your admin pages:
 - **Check**: API key is generated and saved in your admin settings
 
 ### Issue: "Connection failed"
-- **Solution**: Verify the Revenue Ripple URL in your `.env.local` file
+- **Solution**: Verify the Revenue Ripple URL in your `.env` file
 - **Check**: Make sure your Revenue Ripple site is accessible from where DevOps modules are running
 
 ### Issue: "API key invalid"

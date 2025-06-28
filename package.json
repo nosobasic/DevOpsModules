@@ -9,9 +9,12 @@
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
     "build:server": "tsc --project tsconfig.server.json",
+    "build:production": "NODE_ENV=production npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node dist/server/index.js",
+    "start:production": "NODE_ENV=production node dist/server/index.js",
+    "deploy": "./deploy-production.sh",
     "test": "vitest"
   },
   "dependencies": {

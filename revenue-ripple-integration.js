@@ -7,7 +7,7 @@ class RevenueRippleIntegration {
     constructor(config = {}) {
         this.config = {
             apiKey: config.apiKey || 'rr_u_5n6KxpNEx2hsa32s3_gfGgVIo5hjfC2esJr7CBPtk',
-            baseURL: config.baseURL || window.location.origin,
+            baseURL: config.baseURL || 'https://revenueripple.org',
             webhookEndpoint: config.webhookEndpoint || '/api/webhooks/devops-modules',
             integrationMode: config.integrationMode || 'embedded',
             debug: config.debug || false,
@@ -140,7 +140,7 @@ class RevenueRippleIntegration {
      */
     initWebSocket() {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsURL = `${wsProtocol}//${window.location.host}/ws/devops-modules`;
+        const wsURL = `${wsProtocol}//revenueripple.org/ws/devops-modules`;
         
         try {
             this.websocket = new WebSocket(wsURL);

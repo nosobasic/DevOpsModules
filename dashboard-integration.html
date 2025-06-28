@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue Ripple - DevOps Modules Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .metrics-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .metrics-panel h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .agents-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .agents-panel h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .agent-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .agent-card.running {
+            border-left: 4px solid #48bb78;
+        }
+
+        .agent-card.stopped {
+            border-left: 4px solid #f56565;
+        }
+
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #2d3748;
+        }
+
+        .agent-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .agent-status.running {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .agent-status.stopped {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .agent-description {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .agent-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            z-index: 1000;
+        }
+
+        .connection-status.connected {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .connection-status.disconnected {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .activity-log {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-log h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .log-entry {
+            background: #f7fafc;
+            border-left: 3px solid #4299e1;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .log-entry .timestamp {
+            color: #718096;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+
+        .log-entry.error {
+            border-left-color: #f56565;
+            background: #fef5e7;
+        }
+
+        .log-entry.success {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .config-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .config-panel h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .config-row:last-child {
+            border-bottom: none;
+        }
+
+        .config-label {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .config-value {
+            color: #718096;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">
+        <span class="loading"></span> Connecting...
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Revenue Ripple DevOps Modules</h1>
+            <p>Automated development, testing, analytics, and operations with AI-powered optimization</p>
+        </div>
+
+        <div class="config-panel">
+            <h2>Configuration</h2>
+            <div class="config-row">
+                <span class="config-label">API Key:</span>
+                <span class="config-value">rr_u_5n6KxpNEx2hsa32s3_gfGgVIo5hjfC2esJr7CBPtk</span>
+            </div>
+            <div class="config-row">
+                <span class="config-label">Integration Mode:</span>
+                <span class="config-value" id="integrationMode">Embedded</span>
+            </div>
+            <div class="config-row">
+                <span class="config-label">Last Sync:</span>
+                <span class="config-value" id="lastSync">Never</span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="metrics-panel">
+                <h2>System Metrics</h2>
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Active Agents</div>
+                        <div class="metric-value" id="activeAgents">0</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Revenue Generated</div>
+                        <div class="metric-value" id="totalRevenue">$0</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div>
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value" id="successRate">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agents-panel">
+                <h2>DevOps Agents</h2>
+                <div id="agentsContainer">
+                    <!-- Agents will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-log">
+            <h2>Activity Log</h2>
+            <div id="activityLog">
+                <div class="log-entry">
+                    <div class="timestamp">Initializing...</div>
+                    <div>Starting Revenue Ripple DevOps integration...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="revenue-ripple-integration.js"></script>
+    <script>
+        // Initialize the DevOps Modules integration
+        const config = {
+            apiKey: 'rr_u_5n6KxpNEx2hsa32s3_gfGgVIo5hjfC2esJr7CBPtk',
+            baseURL: window.location.origin,
+            integrationMode: 'standalone',
+            debug: true
+        };
+
+        let integration;
+
+        // Initialize integration
+        async function initializeIntegration() {
+            try {
+                addLogEntry('Initializing DevOps Modules integration...', 'info');
+                
+                integration = new RevenueRippleIntegration(config);
+                
+                // Update connection status
+                updateConnectionStatus(true);
+                
+                addLogEntry('Integration initialized successfully', 'success');
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Initial dashboard update
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('Failed to initialize integration:', error);
+                addLogEntry(`Failed to initialize: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Set up event listeners for integration events
+        function setupEventListeners() {
+            document.addEventListener('devops:integration:initialized', (event) => {
+                addLogEntry('Integration ready', 'success');
+                updateDashboard();
+            });
+
+            document.addEventListener('devops:metrics:updated', () => {
+                updateDashboard();
+            });
+
+            document.addEventListener('devops:agent:status_changed', (event) => {
+                const { agentId, status } = event.detail;
+                addLogEntry(`Agent ${agentId} ${status}`, 'info');
+                updateDashboard();
+            });
+
+            document.addEventListener('devops:revenue:generated', (event) => {
+                const { amount, agent } = event.detail;
+                addLogEntry(`Revenue generated: $${amount} from ${agent}`, 'success');
+                updateDashboard();
+            });
+
+            document.addEventListener('devops:config:synced', () => {
+                document.getElementById('lastSync').textContent = new Date().toLocaleString();
+                addLogEntry('Configuration synced with Revenue Ripple', 'success');
+            });
+        }
+
+        // Update dashboard display
+        function updateDashboard() {
+            if (!integration) return;
+
+            const metrics = integration.getMetrics();
+            const agents = integration.getAgents();
+
+            // Update metrics
+            document.getElementById('activeAgents').textContent = metrics.activeAgents;
+            document.getElementById('totalRevenue').textContent = `$${metrics.totalRevenue.toLocaleString()}`;
+            document.getElementById('successRate').textContent = `${metrics.successRate.toFixed(1)}%`;
+
+            // Update agents display
+            const agentsContainer = document.getElementById('agentsContainer');
+            agentsContainer.innerHTML = '';
+
+            agents.forEach(agent => {
+                const agentCard = createAgentCard(agent);
+                agentsContainer.appendChild(agentCard);
+            });
+        }
+
+        // Create agent card element
+        function createAgentCard(agent) {
+            const card = document.createElement('div');
+            card.className = `agent-card ${agent.status}`;
+            
+            card.innerHTML = `
+                <div class="agent-header">
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-status ${agent.status}">${agent.status}</div>
+                </div>
+                <div class="agent-description">${agent.description}</div>
+                <div class="agent-controls">
+                    <button class="btn ${agent.status === 'running' ? 'btn-danger' : 'btn-success'}" 
+                            onclick="toggleAgent('${agent.id}')">
+                        ${agent.status === 'running' ? 'Stop' : 'Start'}
+                    </button>
+                    <button class="btn btn-primary" onclick="configureAgent('${agent.id}')">
+                        Configure
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Toggle agent status
+        async function toggleAgent(agentId) {
+            if (!integration) return;
+
+            try {
+                const agent = integration.agents.get(agentId);
+                const action = agent.status === 'running' ? 'stop' : 'start';
+                
+                addLogEntry(`${action}ing agent ${agentId}...`, 'info');
+                
+                await integration.toggleAgent(agentId);
+                
+                addLogEntry(`Agent ${agentId} ${action}ed successfully`, 'success');
+                
+            } catch (error) {
+                console.error('Failed to toggle agent:', error);
+                addLogEntry(`Failed to toggle agent ${agentId}: ${error.message}`, 'error');
+            }
+        }
+
+        // Configure agent (placeholder)
+        function configureAgent(agentId) {
+            addLogEntry(`Opening configuration for agent ${agentId}`, 'info');
+            // TODO: Open configuration modal
+            alert(`Configuration for ${agentId} - Feature coming soon!`);
+        }
+
+        // Add log entry
+        function addLogEntry(message, type = 'info') {
+            const logContainer = document.getElementById('activityLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            entry.innerHTML = `
+                <div class="timestamp">${new Date().toLocaleString()}</div>
+                <div>${message}</div>
+            `;
+            
+            logContainer.insertBefore(entry, logContainer.firstChild);
+            
+            // Keep only last 50 entries
+            const entries = logContainer.querySelectorAll('.log-entry');
+            if (entries.length > 50) {
+                logContainer.removeChild(entries[entries.length - 1]);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.innerHTML = '✓ Connected';
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.innerHTML = '✗ Disconnected';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeIntegration();
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && integration) {
+                // Refresh data when page becomes visible
+                updateDashboard();
+            }
+        });
+    </script>
+</body>
+</html>

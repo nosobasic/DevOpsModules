@@ -1,0 +1,348 @@
+/* Widget System Styles */
+
+/* Grid Layout Overrides */
+.react-grid-layout {
+  position: relative;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgb(59, 130, 246, 0.1);
+  border: 2px dashed rgb(59, 130, 246);
+  border-radius: 8px;
+  opacity: 0.8;
+  transition-duration: 100ms;
+  z-index: 2;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item.resizing {
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.dragging {
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNiIgaGVpZ2h0PSI2IiB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Im0xIDUgNCAwaS0yIDAtMiAyem0wLTMgMiAwaS0yIDAtMiAyem0zIDMgMiAwaS0yIDAtMiAyeiIgZmlsbD0iIzk5OTk5OSIvPjwvc3ZnPg==');
+  background-position: bottom right;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+  z-index: 10;
+}
+
+.react-grid-item > .react-resizable-handle:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Widget Container */
+.widget-container {
+  height: 100%;
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+
+.widget-container:hover {
+  transform: translateY(-1px);
+}
+
+.widget-container.edit-mode {
+  cursor: move;
+}
+
+.widget-container.edit-mode:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.widget-container.selected {
+  outline: 2px solid rgb(59, 130, 246);
+  outline-offset: -2px;
+}
+
+.widget-container.dragging {
+  opacity: 0.8;
+  transform: rotate(2deg);
+}
+
+/* Widget Wrapper */
+.widget-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.widget-wrapper:hover .widget-header {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.widget-header {
+  flex-shrink: 0;
+  user-select: none;
+  cursor: move;
+  transition: background-color 200ms ease;
+}
+
+.widget-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.widget-footer {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+/* Widget Status Indicators */
+.widget-wrapper .status-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.widget-wrapper .status-indicator.loading {
+  background-color: rgb(59, 130, 246);
+  animation: pulse 2s infinite;
+}
+
+.widget-wrapper .status-indicator.error {
+  background-color: rgb(239, 68, 68);
+}
+
+.widget-wrapper .status-indicator.success {
+  background-color: rgb(34, 197, 94);
+}
+
+/* Widget Charts */
+.widget-content .recharts-wrapper {
+  font-size: 12px;
+}
+
+.widget-content .recharts-cartesian-axis-tick-value {
+  font-size: 11px;
+}
+
+.widget-content .recharts-legend-wrapper {
+  font-size: 11px;
+}
+
+/* Widget Metric Cards */
+.metric-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 200ms ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card.warning {
+  border-left: 4px solid rgb(245, 158, 11);
+}
+
+.metric-card.critical {
+  border-left: 4px solid rgb(239, 68, 68);
+}
+
+/* Widget Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.widget-container {
+  animation: fadeIn 300ms ease-out;
+}
+
+/* Widget Grid Responsiveness */
+@media (max-width: 768px) {
+  .react-grid-item {
+    margin-bottom: 16px;
+  }
+  
+  .widget-header {
+    padding: 12px;
+  }
+  
+  .widget-content {
+    padding: 12px;
+  }
+  
+  .widget-footer {
+    padding: 8px 12px;
+  }
+}
+
+/* Widget Fullscreen */
+.widget-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50;
+  background: white;
+  animation: fadeIn 200ms ease-out;
+}
+
+.widget-fullscreen .widget-content {
+  padding: 24px;
+}
+
+/* Widget Loading States */
+.widget-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.widget-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+  z-index: 1;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Widget Error States */
+.widget-error {
+  color: rgb(239, 68, 68);
+  background-color: rgb(254, 242, 242);
+  border-color: rgb(252, 165, 165);
+}
+
+/* Widget Context Menu */
+.widget-context-menu {
+  position: absolute;
+  z-index: 100;
+  min-width: 180px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 150ms ease-out;
+}
+
+.widget-context-menu-item {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.widget-context-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.widget-context-menu-item.danger {
+  color: rgb(239, 68, 68);
+}
+
+.widget-context-menu-item.danger:hover {
+  background-color: rgb(254, 242, 242);
+}
+
+/* Widget Selector Modal */
+.widget-selector-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  animation: fadeIn 200ms ease-out;
+}
+
+.widget-selector-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  z-index: 51;
+  animation: fadeIn 200ms ease-out;
+  overflow: hidden;
+}
+
+.widget-template-card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.widget-template-card:hover {
+  border-color: rgb(59, 130, 246);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .widget-wrapper {
+    background-color: rgb(31, 41, 55);
+    border-color: rgb(55, 65, 81);
+  }
+  
+  .widget-header {
+    border-bottom-color: rgb(55, 65, 81);
+  }
+  
+  .widget-footer {
+    border-top-color: rgb(55, 65, 81);
+    background-color: rgba(55, 65, 81, 0.3);
+  }
+  
+  .metric-card {
+    background-color: rgb(31, 41, 55);
+    border-color: rgb(55, 65, 81);
+  }
+}

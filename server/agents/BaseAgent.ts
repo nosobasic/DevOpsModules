@@ -29,11 +29,17 @@ export abstract class BaseAgent {
 
   public start(): void {
     if (this.status === AgentStatus.ACTIVE || this.status === AgentStatus.RUNNING) {
+      console.log(`⚠️ ${this.name} is already running`);
       return;
     }
 
     this.status = AgentStatus.ACTIVE;
     this.scheduleNextRun();
+    
+    // Emit real-time events
+    this.emitStatusUpdate();
+    this.emitActivityLog('agent_start', `${this.name} started successfully`);
+    
     console.log(`🤖 ${this.name} started`);
   }
 
@@ -44,11 +50,20 @@ export abstract class BaseAgent {
     }
     this.status = AgentStatus.INACTIVE;
     this.nextRun = undefined;
+    
+    // Emit real-time events
+    this.emitStatusUpdate();
+    this.emitActivityLog('agent_stop', `${this.name} stopped`);
+    
     console.log(`🛑 ${this.name} stopped`);
   }
 
   public configure(config: Partial<AgentConfig>): void {
     this.config = { ...this.config, ...config };
+    
+    // Emit configuration update
+    this.emitActivityLog('metric_update', `${this.name} configuration updated`);
+    
     if (this.status === AgentStatus.ACTIVE) {
       this.stop();
       this.start();
@@ -101,6 +116,9 @@ export abstract class BaseAgent {
     this.status = AgentStatus.RUNNING;
     this.lastRun = new Date();
 
+    // Emit running status
+    this.emitStatusUpdate();
+
     try {
       await this.execute();
       this.metrics.runs++;
@@ -109,12 +127,28 @@ export abstract class BaseAgent {
       this.updateMetrics(true, executionTime);
       
       this.status = AgentStatus.ACTIVE;
+      
+      // Emit success events
+      this.emitStatusUpdate();
+      this.emitActivityLog('success', `${this.name} execution completed successfully`, {
+        executionTime,
+        successRate: this.metrics.successRate,
+        totalRuns: this.metrics.runs
+      });
+      
       console.log(`✅ ${this.name} execution completed in ${executionTime}ms`);
     } catch (error) {
       console.error(`❌ ${this.name} execution failed:`, error);
-      this.metrics.lastError = error.message;
+      this.metrics.lastError = error instanceof Error ? error.message : String(error);
       this.updateMetrics(false, Date.now() - startTime);
       this.status = AgentStatus.ERROR;
+      
+      // Emit error events
+      this.emitStatusUpdate();
+      this.emitActivityLog('error', `${this.name} execution failed: ${error instanceof Error ? error.message : String(error)}`, {
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime
+      });
     }
 
     this.scheduleNextRun();
@@ -143,9 +177,54 @@ export abstract class BaseAgent {
     if (this.metrics.dataPoints.length > 100) {
       this.metrics.dataPoints = this.metrics.dataPoints.slice(-100);
     }
+
+    // Emit metrics update
+    this.emitMetricsUpdate();
   }
 
   protected emit(event: string, data: any): void {
     this.io.emit(`agent:${this.id}:${event}`, data);
+  }
+
+  protected emitStatusUpdate(): void {
+    this.io.emit('agent:status:update', {
+      agentId: this.id,
+      agentType: this.id,
+      name: this.name,
+      status: this.status,
+      lastRun: this.lastRun,
+      nextRun: this.nextRun
+    });
+  }
+
+  protected emitMetricsUpdate(): void {
+    this.io.emit('agent:metrics:update', {
+      agentId: this.id,
+      agentType: this.id,
+      name: this.name,
+      metrics: this.metrics
+    });
+  }
+
+  protected emitActivityLog(type: string, message: string, details?: any): void {
+    this.io.emit('activity:log', {
+      id: `${this.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+      agentId: this.id,
+      agentName: this.name,
+      type,
+      status: type === 'error' ? 'error' : type === 'success' ? 'success' : 'info',
+      message,
+      details
+    });
+  }
+
+  protected emitData(data: any): void {
+    this.io.emit('agent:data', {
+      agentType: this.id,
+      agentId: this.id,
+      data,
+      timestamp: new Date()
+    });
   }
 }

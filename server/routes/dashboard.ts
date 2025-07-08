@@ -1,27 +1,21 @@
 import { Router } from 'express';
-import { agentManager } from '../index.js';
 
 export const dashboardRoutes = Router();
 
 // Get dashboard overview
-dashboardRoutes.get('/overview', (req, res) => {
+dashboardRoutes.get('/overview', async (req, res) => {
   try {
-    const agents = agentManager.getAllAgents();
-    const totalAgents = agents.length;
-    const activeAgents = agents.filter(agent => agent.status === 'active').length;
-    const runningAgents = agents.filter(agent => agent.status === 'running').length;
-    const errorAgents = agents.filter(agent => agent.status === 'error').length;
+    // Import agentManager dynamically to avoid circular dependency
+    const { agentManager } = await import('../index.js');
+    const overview = agentManager.getDashboardOverview();
 
-    const overview = {
-      totalAgents,
-      activeAgents,
-      runningAgents,
-      errorAgents,
-      healthScore: Math.round(((activeAgents + runningAgents) / totalAgents) * 100) || 0
-    };
-
-    res.json({ success: true, data: overview, timestamp: new Date().toISOString() });
+    res.json({ 
+      success: true, 
+      data: overview, 
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
+    console.error('Error fetching dashboard overview:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message, 
@@ -31,17 +25,18 @@ dashboardRoutes.get('/overview', (req, res) => {
 });
 
 // Get metrics
-dashboardRoutes.get('/metrics', (req, res) => {
+dashboardRoutes.get('/metrics', async (req, res) => {
   try {
-    const agents = agentManager.getAllAgents();
-    const metrics = agents.map(agent => ({
-      type: agent.type,
-      name: agent.name,
-      metrics: agent.metrics
-    }));
+    const { agentManager } = await import('../index.js');
+    const metrics = agentManager.getAgentMetrics();
 
-    res.json({ success: true, data: metrics, timestamp: new Date().toISOString() });
+    res.json({ 
+      success: true, 
+      data: metrics, 
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
+    console.error('Error fetching metrics:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message, 
@@ -51,28 +46,19 @@ dashboardRoutes.get('/metrics', (req, res) => {
 });
 
 // Get activity log
-dashboardRoutes.get('/activity', (req, res) => {
+dashboardRoutes.get('/activity', async (req, res) => {
   try {
-    // In a real implementation, this would come from a database
-    const activities = [
-      {
-        id: '1',
-        type: 'agent_start',
-        agent: 'kpi-tracker',
-        message: 'KPI Tracker agent started',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString()
-      },
-      {
-        id: '2',
-        type: 'metric_update',
-        agent: 'revenue-ripple',
-        message: 'Revenue metrics updated',
-        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString()
-      }
-    ];
+    const limit = parseInt(req.query.limit as string) || 100;
+    const { agentManager } = await import('../index.js');
+    const activities = agentManager.getActivityLogs(limit);
 
-    res.json({ success: true, data: activities, timestamp: new Date().toISOString() });
+    res.json({ 
+      success: true, 
+      data: activities, 
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
+    console.error('Error fetching activity log:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message, 

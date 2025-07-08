@@ -18,9 +18,11 @@ interface AgentCardProps {
   agent: Agent;
   isSelected: boolean;
   onSelect: () => void;
+  onStart?: () => void | Promise<void>;
+  onStop?: () => void | Promise<void>;
 }
 
-export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
+export function AgentCard({ agent, isSelected, onSelect, onStart, onStop }: AgentCardProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
@@ -48,6 +50,16 @@ export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
         return 'status-indicator';
       default:
         return 'status-inactive';
+    }
+  };
+
+  const isRunning = agent.status === 'active' || agent.status === 'running';
+
+  const handleToggle = async () => {
+    if (isRunning && onStop) {
+      await onStop();
+    } else if (!isRunning && onStart) {
+      await onStart();
     }
   };
 
@@ -113,9 +125,13 @@ export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
         )}
       </div>
 
-      <div className="mt-4 flex space-x-2">
-        <button className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3">
-          {agent.status === 'active' || agent.status === 'running' ? 'Stop' : 'Start'}
+      <div className="mt-4 flex space-x-2" onClick={(e) => e.stopPropagation()}>
+        <button 
+          onClick={handleToggle}
+          disabled={!onStart && !onStop}
+          className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3"
+        >
+          {isRunning ? 'Stop' : 'Start'}
         </button>
         <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
           ⚙️

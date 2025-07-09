@@ -1,0 +1,43 @@
+# Documentation Links
+
+## Core Technologies
+- React 19: https://react.dev/
+- TypeScript: https://www.typescriptlang.org/docs/
+- Vite: https://vitejs.dev/guide/
+- Tailwind CSS: https://tailwindcss.com/docs
+- Socket.IO: https://socket.io/docs/v4/
+
+## UI Components & Libraries
+- Radix UI: https://www.radix-ui.com/docs
+- Lucide React: https://lucide.dev/guide/packages/lucide-react
+- Recharts: https://recharts.org/en-US/
+- Framer Motion: https://www.framer.com/motion/
+- React Router: https://reactrouter.com/en/main
+
+## State Management & Data Fetching
+- Zustand: https://docs.pmnd.rs/zustand/getting-started/introduction
+- TanStack Query: https://tanstack.com/query/latest/docs/react/overview
+- Axios: https://axios-http.com/docs/intro
+
+## Development Tools
+- ESLint: https://eslint.org/docs/latest/
+- PostCSS: https://postcss.org/docs/
+- Vitest: https://vitest.dev/guide/
+
+## Node.js & Express
+- Express.js: https://expressjs.com/
+- Node.js: https://nodejs.org/docs/
+
+## Revenue Ripple Integration
+- Revenue Ripple API: [Add your Revenue Ripple API documentation link here]
+- Webhook Documentation: [Add webhook documentation link here]
+
+## Deployment & DevOps
+- Environment Variables: https://nodejs.org/api/process.html#processenv
+- Production Deployment: See deploy-production.sh and PRODUCTION_CONFIG.md
+
+## Project-Specific Documentation
+- Quick Setup: QUICK_SETUP_GUIDE.md
+- Implementation Summary: IMPLEMENTATION_SUMMARY.md
+- Production Config: PRODUCTION_CONFIG.md
+- Integration Guide: DEVOPS_MODULES_INTEGRATION_GUIDE.md 

@@ -112,7 +112,7 @@ export abstract class BaseAgent {
       console.log(`✅ ${this.name} execution completed in ${executionTime}ms`);
     } catch (error) {
       console.error(`❌ ${this.name} execution failed:`, error);
-      this.metrics.lastError = error.message;
+      this.metrics.lastError = error instanceof Error ? error.message : 'Unknown error';
       this.updateMetrics(false, Date.now() - startTime);
       this.status = AgentStatus.ERROR;
     }

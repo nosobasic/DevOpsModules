@@ -1,8 +1,17 @@
 import { Router } from 'express';
-import { agentManager } from '../index.js';
 import { AgentType } from '../../shared/types.js';
 
+// Import AgentManager directly instead of from index to avoid circular dependencies
+import { AgentManager } from '../agents/AgentManager.js';
+
 export const agentRoutes = Router();
+
+// Create a placeholder for agentManager - this will be injected by the main server
+let agentManager: AgentManager;
+
+export const setAgentManager = (manager: AgentManager) => {
+  agentManager = manager;
+};
 
 // Get all agents
 agentRoutes.get('/', (req, res) => {
@@ -12,7 +21,7 @@ agentRoutes.get('/', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -36,7 +45,7 @@ agentRoutes.get('/:type', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -56,7 +65,7 @@ agentRoutes.post('/:type/start', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -76,7 +85,7 @@ agentRoutes.post('/:type/stop', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -97,7 +106,7 @@ agentRoutes.put('/:type/config', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }

@@ -37,7 +37,7 @@ webhookRoutes.post('/:source', (req, res) => {
     console.error('Webhook processing error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -68,7 +68,7 @@ webhookRoutes.get('/logs', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }

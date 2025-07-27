@@ -24,7 +24,7 @@ dashboardRoutes.get('/overview', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -44,7 +44,7 @@ dashboardRoutes.get('/metrics', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }
@@ -75,7 +75,7 @@ dashboardRoutes.get('/activity', (req, res) => {
   } catch (error) {
     res.status(500).json({ 
       success: false, 
-      error: error.message, 
+      error: error instanceof Error ? error.message : 'Unknown error', 
       timestamp: new Date().toISOString() 
     });
   }

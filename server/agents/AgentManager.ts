@@ -49,7 +49,7 @@ export class AgentManager {
       return true;
     } catch (error) {
       console.error(`Failed to start agent ${agentType}:`, error);
-      this.io.emit('agent:error', { agentType, error: error.message });
+      this.io.emit('agent:error', { agentType, error: error instanceof Error ? error.message : 'Unknown error' });
       return false;
     }
   }

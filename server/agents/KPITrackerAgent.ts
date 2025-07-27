@@ -44,7 +44,7 @@ export class KPITrackerAgent extends BaseAgent {
       user_acquisition: 100
     };
 
-    const base = baseValues[kpi] || 100;
+    const base = baseValues[kpi as keyof typeof baseValues] || 100;
     const variance = base * 0.1; // 10% variance
     return base + (Math.random() - 0.5) * variance;
   }

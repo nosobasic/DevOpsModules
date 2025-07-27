@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: devops-modules-api
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build:server
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CLIENT_URL
+        value: https://your-frontend-domain.vercel.app
+      - key: REACT_APP_REVENUE_RIPPLE_URL
+        sync: false
+      - key: REACT_APP_REVENUE_RIPPLE_API_KEY
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false 

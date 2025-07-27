@@ -27,6 +27,10 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize Agent Manager
 const agentManager = new AgentManager(io);
 
+// Set agent manager for routes
+import { setAgentManager } from './routes/agents.js';
+setAgentManager(agentManager);
+
 // Routes
 app.use('/api/agents', agentRoutes);
 app.use('/api/dashboard', dashboardRoutes);

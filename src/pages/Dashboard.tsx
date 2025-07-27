@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AgentCard } from '../components/dashboard/AgentCard';
 import { MetricsOverview } from '../components/dashboard/MetricsOverview';
 import { ActivityLog } from '../components/dashboard/ActivityLog';
 import { Header } from '../components/dashboard/Header';
 import { AgentType } from '../../shared/types';
+import { configManager } from '../lib/config';
 
 interface Agent {
   id: string;
@@ -23,84 +24,85 @@ interface Agent {
   };
 }
 
-// Mock data for development
-const mockAgents: Agent[] = [
-  {
-    id: 'kpi-tracker',
-    name: 'KPI Tracker',
-    type: AgentType.KPI_TRACKER,
-    status: 'active',
-    lastRun: new Date(Date.now() - 5 * 60 * 1000),
-    nextRun: new Date(Date.now() + 25 * 60 * 1000),
-    config: { interval: 30000 },
-    metrics: {
-      runs: 142,
-      successRate: 98.5,
-      averageRunTime: 2340,
-      dataPoints: []
-    }
-  },
-  {
-    id: 'revenue-ripple',
-    name: 'Revenue Ripple Tracker',
-    type: AgentType.REVENUE_RIPPLE,
-    status: 'running',
-    lastRun: new Date(Date.now() - 2 * 60 * 1000),
-    nextRun: new Date(Date.now() + 58 * 60 * 1000),
-    config: { interval: 60000 },
-    metrics: {
-      runs: 89,
-      successRate: 100,
-      averageRunTime: 1850,
-      dataPoints: []
-    }
-  },
-  {
-    id: 'ab-optimizer',
-    name: 'A/B Optimizer',
-    type: AgentType.AB_OPTIMIZER,
-    status: 'inactive',
-    config: { interval: 120000 },
-    metrics: {
-      runs: 24,
-      successRate: 95.8,
-      averageRunTime: 4200,
-      dataPoints: []
-    }
-  },
-  {
-    id: 'funnel-tester',
-    name: 'Funnel Tester',
-    type: AgentType.FUNNEL_TESTER,
-    status: 'error',
-    lastRun: new Date(Date.now() - 15 * 60 * 1000),
-    config: { interval: 300000 },
-    metrics: {
-      runs: 12,
-      successRate: 83.3,
-      averageRunTime: 3100,
-      lastError: 'Connection timeout to analytics API',
-      dataPoints: []
-    }
-  }
-];
-
+// Real API functions
 async function fetchAgents(): Promise<Agent[]> {
-  // In production, this would be an API call
-  // const response = await fetch('/api/agents');
-  // return response.json();
-  
-  // For now, return mock data
-  return new Promise(resolve => setTimeout(() => resolve(mockAgents), 1000));
+  try {
+    const apiUrl = configManager.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/agents`);
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Failed to fetch agents:', error);
+    return [];
+  }
+}
+
+async function startAgent(agentType: string): Promise<boolean> {
+  try {
+    const apiUrl = configManager.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/agents/${agentType}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Failed to start agent:', error);
+    return false;
+  }
+}
+
+async function stopAgent(agentType: string): Promise<boolean> {
+  try {
+    const apiUrl = configManager.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/agents/${agentType}/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Failed to stop agent:', error);
+    return false;
+  }
 }
 
 export function Dashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: agents = [], isLoading, error } = useQuery({
     queryKey: ['agents'],
-    queryFn: fetchAgents
+    queryFn: fetchAgents,
+    refetchInterval: 5000 // Refetch every 5 seconds
   });
+
+  const startMutation = useMutation({
+    mutationFn: startAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    }
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: stopAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    }
+  });
+
+  const handleStartAgent = (agentType: string) => {
+    startMutation.mutate(agentType);
+  };
+
+  const handleStopAgent = (agentType: string) => {
+    stopMutation.mutate(agentType);
+  };
+
+  const handleConfigureAgent = (agentType: string) => {
+    // TODO: Implement configuration modal
+    console.log('Configure agent:', agentType);
+  };
 
   if (error) {
     return (
@@ -108,6 +110,7 @@ export function Dashboard() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-destructive mb-2">Error Loading Dashboard</h2>
           <p className="text-muted-foreground">Please try refreshing the page</p>
+          <p className="text-sm text-muted-foreground mt-2">Error: {error.message}</p>
         </div>
       </div>
     );
@@ -149,6 +152,10 @@ export function Dashboard() {
                   onSelect={() => setSelectedAgent(
                     selectedAgent === agent.id ? null : agent.id
                   )}
+                  onStart={() => handleStartAgent(agent.type)}
+                  onStop={() => handleStopAgent(agent.type)}
+                  onConfigure={() => handleConfigureAgent(agent.type)}
+                  isLoading={startMutation.isPending || stopMutation.isPending}
                 />
               ))}
             </div>

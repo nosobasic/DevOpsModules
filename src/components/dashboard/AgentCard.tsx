@@ -18,9 +18,21 @@ interface AgentCardProps {
   agent: Agent;
   isSelected: boolean;
   onSelect: () => void;
+  onStart: () => void;
+  onStop: () => void;
+  onConfigure: () => void;
+  isLoading?: boolean;
 }
 
-export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
+export function AgentCard({ 
+  agent, 
+  isSelected, 
+  onSelect, 
+  onStart, 
+  onStop, 
+  onConfigure, 
+  isLoading = false 
+}: AgentCardProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
@@ -50,6 +62,23 @@ export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
         return 'status-inactive';
     }
   };
+
+  const handleStartClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStart();
+  };
+
+  const handleStopClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStop();
+  };
+
+  const handleConfigureClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onConfigure();
+  };
+
+  const isActive = agent.status === 'active' || agent.status === 'running';
 
   return (
     <div
@@ -114,10 +143,22 @@ export function AgentCard({ agent, isSelected, onSelect }: AgentCardProps) {
       </div>
 
       <div className="mt-4 flex space-x-2">
-        <button className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3">
-          {agent.status === 'active' || agent.status === 'running' ? 'Stop' : 'Start'}
+        <button 
+          className={`flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-8 px-3 ${
+            isActive 
+              ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' 
+              : 'bg-primary text-primary-foreground hover:bg-primary/90'
+          }`}
+          onClick={isActive ? handleStopClick : handleStartClick}
+          disabled={isLoading}
+        >
+          {isLoading ? '...' : (isActive ? 'Stop' : 'Start')}
         </button>
-        <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
+        <button 
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+          onClick={handleConfigureClick}
+          disabled={isLoading}
+        >
           ⚙️
         </button>
       </div>

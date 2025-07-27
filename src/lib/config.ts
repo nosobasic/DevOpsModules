@@ -1,182 +1,102 @@
-import type { RevenueRippleConfig, ApiKey } from '../types';
+// Configuration management for the DevOps Modules frontend
+export interface Config {
+  apiUrl: string;
+  wsUrl: string;
+  apiKey?: string;
+  webhookSecret?: string;
+  adminPanelUrl?: string;
+  integrationMode: 'embedded' | 'standalone' | 'widget';
+}
 
-// Configuration constants
-export const DEFAULT_CONFIG: RevenueRippleConfig = {
-  baseUrl: process.env.REACT_APP_REVENUE_RIPPLE_URL || 'https://revenueripple.org',
-  apiKey: process.env.REACT_APP_REVENUE_RIPPLE_API_KEY || '',
-  webhookSecret: process.env.REACT_APP_WEBHOOK_SECRET || '',
-  adminPanelUrl: process.env.REACT_APP_ADMIN_PANEL_URL || 'https://revenueripple.org/admin',
-  integrationMode: (process.env.REACT_APP_INTEGRATION_MODE as 'embedded' | 'standalone' | 'iframe') || 'embedded'
+// Default configuration
+const DEFAULT_CONFIG: Config = {
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  wsUrl: import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+  integrationMode: 'standalone'
 };
 
-// API endpoints configuration
+// API endpoints
 export const API_ENDPOINTS = {
-  agents: '/api/agents',
-  metrics: '/api/metrics',
-  logs: '/api/logs',
-  webhooks: '/api/webhooks',
-  deploy: '/api/deploy',
-  config: '/api/config',
-  apiKeys: '/api/api-keys'
-};
+  AGENTS: '/api/agents',
+  METRICS: '/api/dashboard/metrics',
+  LOGS: '/api/dashboard/logs',
+  WEBHOOKS: '/api/webhooks',
+  DEPLOYMENTS: '/api/deployments',
+  INTEGRATIONS: '/api/integrations',
+  CONFIG: '/api/config'
+} as const;
 
 // Storage keys
 export const STORAGE_KEYS = {
-  config: 'devops_modules_config',
-  apiKeys: 'devops_modules_api_keys',
-  agentSettings: 'devops_modules_agent_settings'
-};
+  CONFIG: 'devops_modules_config',
+  API_KEY: 'devops_modules_api_key',
+  SESSION: 'devops_modules_session'
+} as const;
 
-class ConfigManager {
-  private config: RevenueRippleConfig;
-  private apiKeys: Map<string, ApiKey> = new Map();
+// Configuration manager
+export class ConfigManager {
+  private config: Config;
 
   constructor() {
     this.config = this.loadConfig();
-    this.loadApiKeys();
   }
 
-  // Configuration management
-  getConfig(): RevenueRippleConfig {
-    return { ...this.config };
-  }
-
-  updateConfig(updates: Partial<RevenueRippleConfig>): void {
-    this.config = { ...this.config, ...updates };
-    this.saveConfig();
-  }
-
-  private loadConfig(): RevenueRippleConfig {
+  private loadConfig(): Config {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.config);
+      const stored = localStorage.getItem(STORAGE_KEYS.CONFIG);
       if (stored) {
         return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
       }
     } catch (error) {
-      console.warn('Failed to load config from localStorage:', error);
+      console.warn('Failed to load stored config:', error);
     }
-    return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG };
+  }
+
+  getConfig(): Config {
+    return { ...this.config };
+  }
+
+  updateConfig(updates: Partial<Config>): void {
+    this.config = { ...this.config, ...updates };
+    this.saveConfig();
   }
 
   private saveConfig(): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(this.config));
+      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(this.config));
     } catch (error) {
-      console.error('Failed to save config to localStorage:', error);
+      console.warn('Failed to save config:', error);
     }
   }
 
-  // API Key management
-  getApiKeys(): ApiKey[] {
-    return Array.from(this.apiKeys.values());
+  getApiUrl(): string {
+    return this.config.apiUrl;
   }
 
-  getApiKey(service: string): ApiKey | undefined {
-    return Array.from(this.apiKeys.values()).find(key => key.service === service && key.isActive);
+  getWsUrl(): string {
+    return this.config.wsUrl;
   }
 
-  addApiKey(apiKey: Omit<ApiKey, 'id' | 'createdAt'>): string {
-    const id = `key_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newKey: ApiKey = {
-      ...apiKey,
-      id,
-      createdAt: new Date()
-    };
-    this.apiKeys.set(id, newKey);
-    this.saveApiKeys();
-    return id;
+  getApiKey(): string | undefined {
+    return this.config.apiKey || localStorage.getItem(STORAGE_KEYS.API_KEY) || undefined;
   }
 
-  updateApiKey(id: string, updates: Partial<ApiKey>): boolean {
-    const existing = this.apiKeys.get(id);
-    if (!existing) return false;
-
-    this.apiKeys.set(id, { ...existing, ...updates });
-    this.saveApiKeys();
-    return true;
+  setApiKey(apiKey: string): void {
+    this.config.apiKey = apiKey;
+    localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
+    this.saveConfig();
   }
 
-  deleteApiKey(id: string): boolean {
-    const deleted = this.apiKeys.delete(id);
-    if (deleted) {
-      this.saveApiKeys();
-    }
-    return deleted;
-  }
-
-  private loadApiKeys(): void {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.apiKeys);
-      if (stored) {
-        const keys: ApiKey[] = JSON.parse(stored);
-        keys.forEach(key => {
-          // Convert date strings back to Date objects
-          key.createdAt = new Date(key.createdAt);
-          if (key.lastUsed) key.lastUsed = new Date(key.lastUsed);
-          if (key.expiresAt) key.expiresAt = new Date(key.expiresAt);
-          this.apiKeys.set(key.id, key);
-        });
-      }
-    } catch (error) {
-      console.warn('Failed to load API keys from localStorage:', error);
-    }
-  }
-
-  private saveApiKeys(): void {
-    try {
-      const keys = Array.from(this.apiKeys.values());
-      localStorage.setItem(STORAGE_KEYS.apiKeys, JSON.stringify(keys));
-    } catch (error) {
-      console.error('Failed to save API keys to localStorage:', error);
-    }
-  }
-
-  // Integration helpers
-  getIntegrationUrl(path: string = ''): string {
-    const baseUrl = this.config.baseUrl.replace(/\/$/, '');
-    const adminPath = this.config.adminPanelUrl.replace(/^\//, '');
-    return `${baseUrl}/${adminPath}${path}`;
-  }
-
-  getWebhookUrl(): string {
-    return `${this.config.baseUrl}/api/webhooks/devops-modules`;
-  }
-
-  isRevenueRippleConfigured(): boolean {
-    return !!(this.config.baseUrl && this.config.apiKey);
-  }
-
-  // Environment detection
-  isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development';
-  }
-
-  isProduction(): boolean {
-    return process.env.NODE_ENV === 'production';
-  }
-
-  // API Key validation
-  validateApiKey(key: string, service: string): boolean {
-    // Basic validation - in production, this would make an API call
-    return key.length > 10 && key.startsWith(service.toLowerCase());
-  }
-
-  // Reset configuration
-  resetConfig(): void {
-    this.config = { ...DEFAULT_CONFIG };
-    this.apiKeys.clear();
-    localStorage.removeItem(STORAGE_KEYS.config);
-    localStorage.removeItem(STORAGE_KEYS.apiKeys);
-    localStorage.removeItem(STORAGE_KEYS.agentSettings);
+  clearApiKey(): void {
+    this.config.apiKey = undefined;
+    localStorage.removeItem(STORAGE_KEYS.API_KEY);
+    this.saveConfig();
   }
 }
 
-// Singleton instance
+// Global config instance
 export const configManager = new ConfigManager();
 
-// Helper functions
-export const getConfig = () => configManager.getConfig();
-export const updateConfig = (updates: Partial<RevenueRippleConfig>) => configManager.updateConfig(updates);
-export const getApiKey = (service: string) => configManager.getApiKey(service);
-export const addApiKey = (apiKey: Omit<ApiKey, 'id' | 'createdAt'>) => configManager.addApiKey(apiKey);
-export const isConfigured = () => configManager.isRevenueRippleConfigured();
+// Export default config for direct use
+export const config = configManager.getConfig();

@@ -1,6 +1,10 @@
 
 
 export function Header() {
+  const handleSettingsClick = () => {
+    alert('Settings panel will be implemented here. This would include:\n\n• API Configuration\n• Webhook Settings\n• Agent Defaults\n• System Preferences\n• Integration Settings');
+  };
+
   return (
     <header className="border-b bg-card">
       <div className="container mx-auto px-4">
@@ -17,7 +21,10 @@ export function Header() {
               <span className="text-muted-foreground">System Online</span>
             </div>
             
-            <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3">
+            <button 
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+              onClick={handleSettingsClick}
+            >
               Settings
             </button>
           </div>

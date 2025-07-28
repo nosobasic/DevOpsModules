@@ -1,90 +1,278 @@
-import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import express from 'express';
 import cors from 'cors';
-import { agentRoutes } from './routes/agents.js';
-import { dashboardRoutes } from './routes/dashboard.js';
-import { webhookRoutes } from './routes/webhooks.js';
 import { AgentManager } from './agents/AgentManager.js';
+import { healthMetrics } from './utils/HealthMetrics.js';
+import { RateLimiterFactory } from './utils/RateLimiter.js';
+import { aiInsightsEngine } from './utils/AIInsightsEngine.js';
 
 const app = express();
 const server = createServer(app);
-
-// CORS configuration
-const corsOptions = {
-  origin: [
-    process.env.CLIENT_URL,
-    "https://dev-ops-modules-508gpxf5m-nosobasics-projects.vercel.app",
-    "https://dev-ops-modules-iq3edu6p4-nosobasics-projects.vercel.app",
-    "https://devops.revenueripple.org",
-    "http://localhost:5173",
-    "http://localhost:3000"
-  ].filter((origin): origin is string => Boolean(origin)),
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-};
-
 const io = new Server(server, {
   cors: {
-    origin: corsOptions.origin,
-    methods: ["GET", "POST"],
-    credentials: true
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
 // Middleware
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Initialize Agent Manager
+// Rate limiters for different endpoints
+const apiLimiter = RateLimiterFactory.createAPILimiter(io);
+const authLimiter = RateLimiterFactory.createAuthLimiter(io);
+
+// Rate limiting middleware
+const createRateLimitMiddleware = (limiter: any, identifier: (req: any) => string) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const id = identifier(req);
+      const rateLimitInfo = await limiter.checkLimit(id);
+      
+      if (rateLimitInfo.isBlocked) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          retryAfter: rateLimitInfo.resetTime,
+          remaining: rateLimitInfo.remaining
+        });
+      }
+      
+      // Add rate limit headers
+      res.set({
+        'X-RateLimit-Limit': limiter.config?.maxRequests || 100,
+        'X-RateLimit-Remaining': rateLimitInfo.remaining,
+        'X-RateLimit-Reset': rateLimitInfo.resetTime.toISOString()
+      });
+      
+      next();
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+      next(); // Continue on rate limiter error
+    }
+  };
+};
+
+// Apply rate limiting
+app.use('/api/', createRateLimitMiddleware(apiLimiter, (req) => req.ip || 'unknown'));
+app.use('/auth/', createRateLimitMiddleware(authLimiter, (req) => req.ip || 'unknown'));
+
+// Initialize systems
 const agentManager = new AgentManager(io);
 
-// Set agent manager for routes
-import { setAgentManager } from './routes/agents.js';
-setAgentManager(agentManager);
+// Initialize AI insights engine with WebSocket support
+aiInsightsEngine['io'] = io;
 
-// Routes
-app.use('/api/agents', agentRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/webhooks', webhookRoutes);
+// Start health metrics collection
+healthMetrics.startCollection(30000); // Every 30 seconds
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  const metrics = healthMetrics.getLatestMetrics();
+  const allAgents = agentManager.getAllAgents();
+  
+  const healthStatus = {
+    status: 'healthy',
+    timestamp: new Date(),
+    agents: {
+      total: allAgents.length,
+      active: allAgents.filter(a => a.status === 'active').length,
+      inactive: allAgents.filter(a => a.status === 'inactive').length,
+      errors: allAgents.filter(a => a.status === 'error').length
+    },
+    system: metrics?.system || null,
+    uptime: process.uptime()
+  };
+
+  // Determine overall health status
+  if (healthStatus.agents.errors > 3) {
+    healthStatus.status = 'degraded';
+  }
+  if (healthStatus.agents.errors > 5) {
+    healthStatus.status = 'unhealthy';
+  }
+
+  const statusCode = healthStatus.status === 'healthy' ? 200 : 
+                    healthStatus.status === 'degraded' ? 206 : 503;
+  
+  res.status(statusCode).json(healthStatus);
 });
 
-// Socket.IO connection handling
+// Agent management endpoints
+app.get('/api/agents', (req, res) => {
+  const agents = agentManager.getAllAgents();
+  res.json({
+    success: true,
+    data: agents,
+    timestamp: new Date()
+  });
+});
+
+app.post('/api/agents/:agentType/start', (req, res) => {
+  const { agentType } = req.params;
+  const connectionId = req.headers['x-connection-id'] as string || 'api';
+  
+  const success = agentManager.startAgent(agentType as any, connectionId);
+  
+  res.json({
+    success,
+    message: success ? `Agent ${agentType} started` : `Failed to start agent ${agentType}`,
+    timestamp: new Date()
+  });
+});
+
+app.post('/api/agents/:agentType/stop', (req, res) => {
+  const { agentType } = req.params;
+  const connectionId = req.headers['x-connection-id'] as string || 'api';
+  
+  const success = agentManager.stopAgent(agentType as any, connectionId);
+  
+  res.json({
+    success,
+    message: success ? `Agent ${agentType} stopped` : `Failed to stop agent ${agentType}`,
+    timestamp: new Date()
+  });
+});
+
+app.post('/api/agents/:agentType/configure', (req, res) => {
+  const { agentType } = req.params;
+  const config = req.body;
+  
+  const success = agentManager.configureAgent(agentType as any, config);
+  
+  res.json({
+    success,
+    message: success ? `Agent ${agentType} configured` : `Failed to configure agent ${agentType}`,
+    timestamp: new Date()
+  });
+});
+
+// Metrics endpoints
+app.get('/api/metrics/system', (req, res) => {
+  const metrics = healthMetrics.getLatestMetrics();
+  res.json({
+    success: true,
+    data: metrics,
+    timestamp: new Date()
+  });
+});
+
+app.get('/api/metrics/agents', (req, res) => {
+  const agents = agentManager.getAllAgents();
+  const metrics = agents.map(agent => ({
+    id: agent.id,
+    name: agent.name,
+    type: agent.type,
+    metrics: agent.metrics,
+    rateLimitInfo: agent.metrics // Would include rate limit info in real implementation
+  }));
+  
+  res.json({
+    success: true,
+    data: metrics,
+    timestamp: new Date()
+  });
+});
+
+// Rate limiter metrics endpoint
+app.get('/api/metrics/rate-limits', (req, res) => {
+  const stats = {
+    api: apiLimiter.getStats(),
+    auth: authLimiter.getStats()
+  };
+  
+  res.json({
+    success: true,
+    data: stats,
+    timestamp: new Date()
+  });
+});
+
+// WebSocket connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log(`🔌 Client connected: ${socket.id}`);
   
-  // Agent-related events
-  socket.on('agent:start', (agentType) => {
-    agentManager.startAgent(agentType, socket.id);
+  // Send current system status
+  socket.emit('system:status', {
+    agents: agentManager.getAllAgents(),
+    health: healthMetrics.getLatestMetrics(),
+    timestamp: new Date()
   });
-  
-  socket.on('agent:stop', (agentType) => {
-    agentManager.stopAgent(agentType, socket.id);
+
+  // Agent management via WebSocket
+  socket.on('agent:start', (data) => {
+    const { agentType } = data;
+    const success = agentManager.startAgent(agentType, socket.id);
+    socket.emit('agent:start:response', { success, agentType });
   });
-  
-  socket.on('agent:configure', (agentType, config) => {
-    agentManager.configureAgent(agentType, config);
+
+  socket.on('agent:stop', (data) => {
+    const { agentType } = data;
+    const success = agentManager.stopAgent(agentType, socket.id);
+    socket.emit('agent:stop:response', { success, agentType });
   });
-  
+
+  socket.on('agent:configure', (data) => {
+    const { agentType, config } = data;
+    const success = agentManager.configureAgent(agentType, config);
+    socket.emit('agent:configure:response', { success, agentType });
+  });
+
+  // Broadcast metrics periodically
+  const metricsInterval = setInterval(() => {
+    socket.emit('metrics:update', {
+      agents: agentManager.getAllAgents().map(a => ({
+        id: a.id,
+        status: a.status,
+        metrics: a.metrics
+      })),
+      system: healthMetrics.getLatestMetrics(),
+      timestamp: new Date()
+    });
+  }, 10000); // Every 10 seconds
+
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+    clearInterval(metricsInterval);
     agentManager.handleDisconnect(socket.id);
   });
 });
 
-const PORT = process.env.PORT || 3001;
-
-server.listen(PORT, () => {
-  const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
-  console.log(`🚀 DevOps Modules Server running on ${HOST}:${PORT}`);
-  console.log(`📊 Dashboard available at http://${HOST}:${PORT}`);
-  console.log(`🌐 CORS origins:`, corsOptions.origin);
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  
+  // Stop all agents
+  const agents = agentManager.getAllAgents();
+  agents.forEach(agent => {
+    if (agent.status === 'active') {
+      agentManager.stopAgent(agent.type, 'system');
+    }
+  });
+  
+  // Stop health metrics collection
+  healthMetrics.stopCollection();
+  
+  // Close server
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
 });
 
-export { io, agentManager };
+process.on('SIGINT', () => {
+  console.log('🛑 SIGINT received, shutting down gracefully');
+  process.emit('SIGTERM');
+});
+
+// Start server
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`🚀 AI Agent System running on port ${PORT}`);
+  console.log(`📊 Health monitoring active`);
+  console.log(`🛡️ Rate limiting enabled`);
+  console.log(`🤖 17 agents available (16 specialized + 1 health monitor)`);
+});
+
+export { io, agentManager, healthMetrics };

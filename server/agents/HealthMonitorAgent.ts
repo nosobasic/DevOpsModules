@@ -23,8 +23,20 @@ export class HealthMonitorAgent extends BaseAgent {
     super('health-monitor', 'Health Monitor', io, {
       interval: 60000, // 1 minute
       settings: {
-        alert_thresholds: this.healthThresholds,
-        services_to_monitor: this.services,
+        alert_thresholds: {
+          cpu_usage: 80,
+          memory_usage: 85,
+          disk_usage: 90,
+          response_time: 2000,
+          error_rate: 5
+        },
+        services_to_monitor: [
+          'database',
+          'redis',
+          'api-gateway',
+          'payment-service',
+          'notification-service'
+        ],
         auto_restart: true,
         notification_channels: ['slack', 'email', 'dashboard']
       }

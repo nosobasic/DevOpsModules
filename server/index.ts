@@ -17,7 +17,19 @@ const io = new Server(server, {
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://dev-ops-modules.vercel.app',
+    'https://dev-ops-modules-bzgkb0x18-nosobasics-projects.vercel.app',
+    'https://dev-ops-modules-7jz9m0fe6-nosobasics-projects.vercel.app',
+    process.env.CLIENT_URL || ''
+  ].filter(origin => origin !== ''),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
 
 // Rate limiters for different endpoints

@@ -4,14 +4,14 @@ services:
     env: node
     plan: starter
     buildCommand: npm install && npm run build:server
-    startCommand: npm start
+    startCommand: npm run start:production
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: CLIENT_URL
-        value: https://your-frontend-domain.vercel.app
+        value: https://dev-ops-modules-iq3edu6p4-nosobasics-projects.vercel.app
       - key: REACT_APP_REVENUE_RIPPLE_URL
         sync: false
       - key: REACT_APP_REVENUE_RIPPLE_API_KEY

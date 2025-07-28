@@ -67,8 +67,9 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
-  console.log(`🚀 DevOps Modules Server running on port ${PORT}`);
-  console.log(`📊 Dashboard available at http://localhost:${PORT}`);
+  const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+  console.log(`🚀 DevOps Modules Server running on ${HOST}:${PORT}`);
+  console.log(`📊 Dashboard available at http://${HOST}:${PORT}`);
 });
 
 export { io, agentManager };

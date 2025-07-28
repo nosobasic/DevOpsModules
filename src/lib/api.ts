@@ -24,7 +24,8 @@ class ApiClient {
 
     // Request interceptor to add API key and base URL
     this.client.interceptors.request.use((config) => {
-      const { baseUrl, apiKey } = configManager.getConfig();
+      const baseUrl = configManager.getApiUrl();
+const apiKey = undefined; // Will be managed by settings
       
       if (baseUrl) {
         config.baseURL = baseUrl;
@@ -70,74 +71,74 @@ class ApiClient {
 
   // Agent management
   async getAgents(): Promise<Agent[]> {
-    return this.get<Agent[]>(API_ENDPOINTS.agents);
+    return this.get<Agent[]>(API_ENDPOINTS.AGENTS);
   }
 
   async getAgent(id: string): Promise<Agent> {
-    return this.get<Agent>(`${API_ENDPOINTS.agents}/${id}`);
+    return this.get<Agent>(`${API_ENDPOINTS.AGENTS}/${id}`);
   }
 
   async createAgent(agent: Omit<Agent, 'id'>): Promise<Agent> {
-    return this.post<Agent>(API_ENDPOINTS.agents, agent);
+    return this.post<Agent>(API_ENDPOINTS.AGENTS, agent);
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
-    return this.put<Agent>(`${API_ENDPOINTS.agents}/${id}`, updates);
+    return this.put<Agent>(`${API_ENDPOINTS.AGENTS}/${id}`, updates);
   }
 
   async deleteAgent(id: string): Promise<void> {
-    return this.delete<void>(`${API_ENDPOINTS.agents}/${id}`);
+    return this.delete<void>(`${API_ENDPOINTS.AGENTS}/${id}`);
   }
 
   async startAgent(id: string): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.agents}/${id}/start`);
+    return this.post<void>(`${API_ENDPOINTS.AGENTS}/${id}/start`);
   }
 
   async stopAgent(id: string): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.agents}/${id}/stop`);
+    return this.post<void>(`${API_ENDPOINTS.AGENTS}/${id}/stop`);
   }
 
   async restartAgent(id: string): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.agents}/${id}/restart`);
+    return this.post<void>(`${API_ENDPOINTS.AGENTS}/${id}/restart`);
   }
 
   // Metrics and analytics
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    return this.get<DashboardMetrics>(`${API_ENDPOINTS.metrics}/dashboard`);
+    return this.get<DashboardMetrics>(`${API_ENDPOINTS.METRICS}/dashboard`);
   }
 
   async getAgentMetrics(id: string, period: string = '24h'): Promise<any> {
-    return this.get<any>(`${API_ENDPOINTS.metrics}/agents/${id}?period=${period}`);
+    return this.get<any>(`${API_ENDPOINTS.METRICS}/agents/${id}?period=${period}`);
   }
 
   async getKPIData(period: string = '30d'): Promise<KPIData[]> {
-    return this.get<KPIData[]>(`${API_ENDPOINTS.metrics}/kpi?period=${period}`);
+    return this.get<KPIData[]>(`${API_ENDPOINTS.METRICS}/kpi?period=${period}`);
   }
 
   async getRevenueMetrics(period: string = '30d'): Promise<any> {
-    return this.get<any>(`${API_ENDPOINTS.metrics}/revenue?period=${period}`);
+    return this.get<any>(`${API_ENDPOINTS.METRICS}/revenue?period=${period}`);
   }
 
   // Activity logs
   async getActivityLogs(limit: number = 100, offset: number = 0): Promise<ActivityLog[]> {
-    return this.get<ActivityLog[]>(`${API_ENDPOINTS.logs}?limit=${limit}&offset=${offset}`);
+    return this.get<ActivityLog[]>(`${API_ENDPOINTS.LOGS}?limit=${limit}&offset=${offset}`);
   }
 
   async getAgentLogs(agentId: string, limit: number = 100): Promise<ActivityLog[]> {
-    return this.get<ActivityLog[]>(`${API_ENDPOINTS.logs}/agents/${agentId}?limit=${limit}`);
+    return this.get<ActivityLog[]>(`${API_ENDPOINTS.LOGS}/agents/${agentId}?limit=${limit}`);
   }
 
   // Webhook management
   async getWebhookEvents(limit: number = 50): Promise<WebhookEvent[]> {
-    return this.get<WebhookEvent[]>(`${API_ENDPOINTS.webhooks}?limit=${limit}`);
+    return this.get<WebhookEvent[]>(`${API_ENDPOINTS.WEBHOOKS}?limit=${limit}`);
   }
 
   async processWebhook(event: Omit<WebhookEvent, 'id' | 'timestamp' | 'processed'>): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.webhooks}/process`, event);
+    return this.post<void>(`${API_ENDPOINTS.WEBHOOKS}/process`, event);
   }
 
   async retryWebhook(eventId: string): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.webhooks}/${eventId}/retry`);
+    return this.post<void>(`${API_ENDPOINTS.WEBHOOKS}/${eventId}/retry`);
   }
 
   // A/B Testing
@@ -155,22 +156,22 @@ class ApiClient {
 
   // Deployment management
   async getDeployments(): Promise<DeploymentStatus[]> {
-    return this.get<DeploymentStatus[]>(API_ENDPOINTS.deploy);
+    return this.get<DeploymentStatus[]>(API_ENDPOINTS.DEPLOYMENTS);
   }
 
   async triggerDeployment(environment: string, branch: string = 'main'): Promise<DeploymentStatus> {
-    return this.post<DeploymentStatus>(`${API_ENDPOINTS.deploy}/trigger`, {
+    return this.post<DeploymentStatus>(`${API_ENDPOINTS.DEPLOYMENTS}/trigger`, {
       environment,
       branch
     });
   }
 
   async getDeploymentStatus(deploymentId: string): Promise<DeploymentStatus> {
-    return this.get<DeploymentStatus>(`${API_ENDPOINTS.deploy}/${deploymentId}`);
+    return this.get<DeploymentStatus>(`${API_ENDPOINTS.DEPLOYMENTS}/${deploymentId}`);
   }
 
   async rollbackDeployment(deploymentId: string): Promise<void> {
-    return this.post<void>(`${API_ENDPOINTS.deploy}/${deploymentId}/rollback`);
+    return this.post<void>(`${API_ENDPOINTS.DEPLOYMENTS}/${deploymentId}/rollback`);
   }
 
   // Integration status

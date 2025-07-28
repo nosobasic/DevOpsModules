@@ -1,8 +1,16 @@
 
 
-export function Header() {
+interface HeaderProps {
+  onSettingsClick?: () => void;
+}
+
+export function Header({ onSettingsClick }: HeaderProps) {
   const handleSettingsClick = () => {
-    alert('Settings panel will be implemented here. This would include:\n\n• API Configuration\n• Webhook Settings\n• Agent Defaults\n• System Preferences\n• Integration Settings');
+    if (onSettingsClick) {
+      onSettingsClick();
+    } else {
+      alert('Settings panel will be implemented here. This would include:\n\n• API Configuration\n• Webhook Settings\n• Agent Defaults\n• System Preferences\n• Integration Settings');
+    }
   };
 
   return (

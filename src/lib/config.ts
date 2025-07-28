@@ -33,70 +33,45 @@ export const STORAGE_KEYS = {
   SESSION: 'devops_modules_session'
 } as const;
 
-// Configuration manager
-export class ConfigManager {
-  private config: Config;
+class ConfigManager {
+  private apiUrl: string;
 
   constructor() {
-    this.config = this.loadConfig();
-  }
-
-  private loadConfig(): Config {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.CONFIG);
-      if (stored) {
-        return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
-      }
-    } catch (error) {
-      console.warn('Failed to load stored config:', error);
-    }
-    return { ...DEFAULT_CONFIG };
-  }
-
-  getConfig(): Config {
-    return { ...this.config };
-  }
-
-  updateConfig(updates: Partial<Config>): void {
-    this.config = { ...this.config, ...updates };
-    this.saveConfig();
-  }
-
-  private saveConfig(): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(this.config));
-    } catch (error) {
-      console.warn('Failed to save config:', error);
-    }
+    // In development, use localhost
+    // In production, use the deployed backend URL
+    this.apiUrl = import.meta.env.VITE_API_URL || 
+                  (import.meta.env.DEV ? 'http://localhost:3001' : 'https://devopsmodules.onrender.com');
   }
 
   getApiUrl(): string {
-    return this.config.apiUrl;
+    return this.apiUrl;
   }
 
-  getWsUrl(): string {
-    return this.config.wsUrl;
+  setApiUrl(url: string): void {
+    this.apiUrl = url;
   }
 
-  getApiKey(): string | undefined {
-    return this.config.apiKey || localStorage.getItem(STORAGE_KEYS.API_KEY) || undefined;
+  getWebSocketUrl(): string {
+    // WebSocket URL should match the API URL but with ws:// or wss://
+    const wsUrl = this.apiUrl.replace(/^http/, 'ws');
+    return wsUrl;
   }
 
-  setApiKey(apiKey: string): void {
-    this.config.apiKey = apiKey;
-    localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
-    this.saveConfig();
+  isDevelopment(): boolean {
+    return import.meta.env.DEV;
   }
 
-  clearApiKey(): void {
-    this.config.apiKey = undefined;
-    localStorage.removeItem(STORAGE_KEYS.API_KEY);
-    this.saveConfig();
+  isProduction(): boolean {
+    return import.meta.env.PROD;
   }
 }
 
-// Global config instance
 export const configManager = new ConfigManager();
 
 // Export default config for direct use
-export const config = configManager.getConfig();
+// Export a simple config object for backward compatibility
+export const config = {
+  baseUrl: configManager.getApiUrl(),
+  wsUrl: configManager.getWebSocketUrl(),
+  apiKey: undefined // Will be set by settings
+};

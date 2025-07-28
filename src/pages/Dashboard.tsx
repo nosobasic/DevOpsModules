@@ -4,6 +4,7 @@ import { AgentCard } from '../components/dashboard/AgentCard';
 import { MetricsOverview } from '../components/dashboard/MetricsOverview';
 import { ActivityLog } from '../components/dashboard/ActivityLog';
 import { Header } from '../components/dashboard/Header';
+import { SettingsPanel } from '../components/dashboard/SettingsPanel';
 import { AgentType } from '../../shared/types';
 import { configManager } from '../lib/config';
 
@@ -108,6 +109,7 @@ async function fetchActivityLog(): Promise<ActivityEvent[]> {
 export function Dashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: agents = [], isLoading, error } = useQuery({
@@ -188,6 +190,12 @@ export function Dashboard() {
     configureMutation.mutate({ agentType, config });
   };
 
+  const handleSaveSettings = (settings: any) => {
+    console.log('Settings saved:', settings);
+    // Here you would typically save settings to backend
+    // For now, we'll just log them
+  };
+
   // Combine server activity log with local events
   const allActivityEvents = [...activityEvents, ...activityLog].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -207,7 +215,7 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header onSettingsClick={() => setShowSettings(true)} />
       
       <main className="container mx-auto px-4 py-8">
         {/* Metrics Overview */}
@@ -257,6 +265,13 @@ export function Dashboard() {
           <ActivityLog events={allActivityEvents} />
         </section>
       </main>
+
+      {/* Settings Panel */}
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 }

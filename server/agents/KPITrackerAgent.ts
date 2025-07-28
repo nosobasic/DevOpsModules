@@ -4,7 +4,7 @@ import { BaseAgent } from './BaseAgent.js';
 export class KPITrackerAgent extends BaseAgent {
   constructor(io: Server) {
     super('kpi-tracker', 'KPI Tracker', io, {
-      interval: 30000, // 30 seconds
+      interval: 120000, // 2 minutes
       settings: {
         kpis: ['revenue', 'conversion_rate', 'user_acquisition'],
         thresholds: {

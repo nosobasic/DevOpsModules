@@ -352,7 +352,7 @@ export class RateLimiterFactory {
   static createAgentLimiter(io?: Server): RateLimiter {
     return new RateLimiter({
       windowMs: 60000, // 1 minute
-      maxRequests: 300, // Higher limit for agents
+      maxRequests: 1000, // Much higher limit for agents
       strategy: 'token-bucket',
       keyGenerator: (identifier) => `agent:${identifier}`
     }, io);

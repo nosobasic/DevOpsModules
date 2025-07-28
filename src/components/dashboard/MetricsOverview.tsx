@@ -1,5 +1,7 @@
 
 
+import { Activity, Users, TrendingUp, AlertTriangle, Heart, Rocket } from 'lucide-react';
+
 interface Agent {
   id: string;
   name: string;
@@ -13,86 +15,73 @@ interface Agent {
 
 interface MetricsOverviewProps {
   agents: Agent[];
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
 export function MetricsOverview({ agents, isLoading }: MetricsOverviewProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="metric-card animate-pulse">
-            <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
-            <div className="h-8 bg-muted rounded w-3/4"></div>
+          <div key={i} className="bg-card p-6 rounded-lg border animate-pulse">
+            <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+            <div className="h-8 bg-muted rounded w-1/2"></div>
           </div>
         ))}
       </div>
     );
   }
 
-  const totalAgents = agents.length;
   const activeAgents = agents.filter(agent => 
     agent.status === 'active' || agent.status === 'running'
   ).length;
-  const errorAgents = agents.filter(agent => agent.status === 'error').length;
-  const averageSuccessRate = agents.length > 0 
-    ? agents.reduce((sum, agent) => sum + agent.metrics.successRate, 0) / agents.length
-    : 0;
   const totalRuns = agents.reduce((sum, agent) => sum + agent.metrics.runs, 0);
-
-  const metrics = [
-    {
-      label: 'Total Agents',
-      value: totalAgents,
-      icon: '🤖',
-      color: 'text-blue-600'
-    },
-    {
-      label: 'Active Agents',
-      value: activeAgents,
-      icon: '🟢',
-      color: 'text-green-600'
-    },
-    {
-      label: 'System Health',
-      value: `${averageSuccessRate.toFixed(1)}%`,
-      icon: '💚',
-      color: 'text-emerald-600'
-    },
-    {
-      label: 'Total Runs',
-      value: totalRuns.toLocaleString(),
-      icon: '🚀',
-      color: 'text-purple-600'
-    }
-  ];
-
-  if (errorAgents > 0) {
-    metrics[2] = {
-      label: 'Agents in Error',
-      value: errorAgents,
-      icon: '⚠️',
-      color: 'text-red-600'
-    };
-  }
+  const errorAgents = agents.filter(agent => agent.status === 'error').length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {metrics.map((metric, index) => (
-        <div key={index} className="metric-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                {metric.label}
-              </p>
-              <p className={`text-2xl font-bold ${metric.color}`}>
-                {metric.value}
-              </p>
-            </div>
-            <div className="text-3xl">{metric.icon}</div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-card p-6 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Active Agents</p>
+            <p className="text-2xl font-bold text-blue-600">{activeAgents}</p>
+          </div>
+          <Activity className="h-8 w-8 text-blue-600" />
+        </div>
+      </div>
+
+      <div className="bg-card p-6 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Tasks Completed</p>
+            <p className="text-2xl font-bold text-green-600">{totalRuns.toLocaleString()}</p>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Heart className="h-6 w-6 text-green-600" />
+            <Rocket className="h-6 w-6 text-green-600" />
           </div>
         </div>
-      ))}
+      </div>
+
+      <div className="bg-card p-6 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Pending Actions</p>
+            <p className="text-2xl font-bold text-orange-600">0</p>
+          </div>
+          <AlertTriangle className="h-8 w-8 text-orange-600" />
+        </div>
+      </div>
+
+      <div className="bg-card p-6 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Issues Detected</p>
+            <p className="text-2xl font-bold text-red-600">{errorAgents}</p>
+          </div>
+          <AlertTriangle className="h-8 w-8 text-red-600" />
+        </div>
+      </div>
     </div>
   );
 }

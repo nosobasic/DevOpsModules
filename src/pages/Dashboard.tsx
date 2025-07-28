@@ -110,6 +110,79 @@ export function Dashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [alerts, setAlerts] = useState([
+    {
+      id: '1',
+      type: 'critical' as const,
+      title: 'Critical Revenue Decline Detected',
+      message: 'Revenue has dropped 40% below target. Immediate action required.',
+      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      agentId: 'kpi-tracker',
+      agentName: 'KPI Tracker',
+      isRead: false,
+      category: 'business' as const,
+      actions: [
+        {
+          id: 'action-1',
+          label: 'Implement Revenue Recovery Plan',
+          action: 'revenue_recovery',
+          priority: 'urgent' as const,
+          estimatedTime: '2-4 hours',
+          impact: '20-35% revenue recovery'
+        },
+        {
+          id: 'action-2',
+          label: 'Launch Emergency Marketing Campaign',
+          action: 'emergency_marketing',
+          priority: 'high' as const,
+          estimatedTime: '1-2 hours',
+          impact: '15-25% immediate boost'
+        }
+      ]
+    },
+    {
+      id: '2',
+      type: 'high' as const,
+      title: 'System Performance Degradation',
+      message: 'Response times have increased by 300%. User experience is being impacted.',
+      timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
+      agentId: 'health-monitor',
+      agentName: 'Health Monitor',
+      isRead: false,
+      category: 'performance' as const,
+      actions: [
+        {
+          id: 'action-3',
+          label: 'Scale Infrastructure Resources',
+          action: 'scale_infrastructure',
+          priority: 'high' as const,
+          estimatedTime: '30 minutes',
+          impact: 'Immediate performance improvement'
+        }
+      ]
+    },
+    {
+      id: '3',
+      type: 'medium' as const,
+      title: 'Conversion Rate Optimization Opportunity',
+      message: 'A/B test results show 25% improvement potential in checkout flow.',
+      timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
+      agentId: 'funnel-tester',
+      agentName: 'Funnel Tester',
+      isRead: false,
+      category: 'business' as const,
+      actions: [
+        {
+          id: 'action-4',
+          label: 'Implement Winning Variant',
+          action: 'implement_ab_test',
+          priority: 'medium' as const,
+          estimatedTime: '1 hour',
+          impact: '25% conversion improvement'
+        }
+      ]
+    }
+  ]);
   const queryClient = useQueryClient();
 
   const { data: agents = [], isLoading, error } = useQuery({
@@ -196,6 +269,21 @@ export function Dashboard() {
     // For now, we'll just log them
   };
 
+  const handleDismissAlert = (alertId: string) => {
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId ? { ...alert, isRead: true } : alert
+    ));
+  };
+
+  const handleActionAlert = (actionId: string, alertId: string) => {
+    console.log(`Taking action ${actionId} for alert ${alertId}`);
+    // Here you would typically trigger the action
+    // For now, we'll just log it and mark the alert as read
+    setAlerts(prev => prev.map(alert => 
+      alert.id === alertId ? { ...alert, isRead: true } : alert
+    ));
+  };
+
   // Combine server activity log with local events
   const allActivityEvents = [...activityEvents, ...activityLog].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -215,7 +303,12 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSettingsClick={() => setShowSettings(true)} />
+      <Header 
+        onSettingsClick={() => setShowSettings(true)}
+        alerts={alerts}
+        onDismissAlert={handleDismissAlert}
+        onActionAlert={handleActionAlert}
+      />
       
       <main className="container mx-auto px-4 py-8">
         {/* Metrics Overview */}

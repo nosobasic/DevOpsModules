@@ -11,7 +11,7 @@ services:
       - key: PORT
         value: 10000
       - key: CLIENT_URL
-        value: https://dev-ops-modules-iq3edu6p4-nosobasics-projects.vercel.app
+        value: https://dev-ops-modules-508gpxf5m-nosobasics-projects.vercel.app
       - key: REACT_APP_REVENUE_RIPPLE_URL
         sync: false
       - key: REACT_APP_REVENUE_RIPPLE_API_KEY

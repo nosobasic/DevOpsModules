@@ -9,18 +9,32 @@ import { AgentManager } from './agents/AgentManager.js';
 
 const app = express();
 const server = createServer(app);
+
+// CORS configuration
+const corsOptions = {
+  origin: [
+    process.env.CLIENT_URL,
+    "https://dev-ops-modules-508gpxf5m-nosobasics-projects.vercel.app",
+    "https://dev-ops-modules-iq3edu6p4-nosobasics-projects.vercel.app",
+    "https://devops.revenueripple.org",
+    "http://localhost:5173",
+    "http://localhost:3000"
+  ].filter((origin): origin is string => Boolean(origin)),
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "https://devops.revenueripple.org",
-    methods: ["GET", "POST"]
+    origin: corsOptions.origin,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || "https://devops.revenueripple.org",
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -70,6 +84,7 @@ server.listen(PORT, () => {
   const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
   console.log(`🚀 DevOps Modules Server running on ${HOST}:${PORT}`);
   console.log(`📊 Dashboard available at http://${HOST}:${PORT}`);
+  console.log(`🌐 CORS origins:`, corsOptions.origin);
 });
 
 export { io, agentManager };

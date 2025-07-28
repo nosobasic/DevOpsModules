@@ -228,44 +228,227 @@ export class AIInsightsEngine {
   private generateKPIInsights(data: any): AIInsight[] {
     const insights: AIInsight[] = [];
     
-    // Analyze KPI trends and thresholds
-    if (data.kpis?.revenue) {
-      const revenue = data.kpis.revenue;
-      const trend = data.trend;
+    // Analyze KPI data with enhanced logic
+    if (data.kpis) {
+      const { revenue, conversion_rate, user_acquisition } = data.kpis;
+      const { issues, opportunities, performance } = data;
       
-      if (trend === 'declining' && revenue < 40000) {
+      // Revenue analysis
+      if (revenue < 30000) {
         insights.push({
-          id: 'revenue-declining',
-          type: 'warning',
+          id: 'revenue-critical',
+          type: 'critical',
           severity: 'high',
-          title: 'Revenue Decline Detected',
-          description: `Revenue trending downward at $${revenue.toLocaleString()}`,
-          impact: 'Monthly targets may not be met',
-          confidence: 0.88,
+          title: 'Critical Revenue Decline',
+          description: `Revenue at $${revenue.toLocaleString()} is 40% below target`,
+          impact: 'Monthly targets will not be met, immediate action required',
+          confidence: 0.92,
           recommendations: [
             {
-              id: 'revenue-recovery-plan',
-              action: 'Implement revenue recovery strategies',
+              id: 'revenue-recovery-urgent',
+              action: 'Implement urgent revenue recovery plan',
+              priority: 'urgent',
+              effort: 'high',
+              estimatedImpact: '20-35% revenue recovery',
+              steps: [
+                'Analyze revenue drop root causes',
+                'Launch emergency marketing campaigns',
+                'Implement customer retention programs',
+                'Review and adjust pricing strategy',
+                'Optimize conversion funnels'
+              ],
+              resources: ['Marketing team', 'Sales team', 'Data analyst', 'Product team'],
+              timeline: '1-2 weeks',
+              riskLevel: 'high',
+              automatable: false
+            }
+          ],
+          dataPoints: [revenue, performance],
+          trend: 'declining',
+          estimatedROI: '$15,000-30,000 monthly recovery',
+          timeframe: '30 days',
+          tags: ['revenue', 'critical', 'recovery']
+        });
+      } else if (revenue > 80000) {
+        insights.push({
+          id: 'revenue-opportunity',
+          type: 'opportunity',
+          severity: 'medium',
+          title: 'Exceptional Revenue Performance',
+          description: `Revenue at $${revenue.toLocaleString()} exceeds targets by 60%`,
+          impact: 'Opportunity to scale operations and expand market reach',
+          confidence: 0.89,
+          recommendations: [
+            {
+              id: 'scale-revenue-operations',
+              action: 'Scale successful revenue operations',
               priority: 'high',
               effort: 'medium',
-              estimatedImpact: '15-25% revenue increase',
+              estimatedImpact: '40-60% growth acceleration',
               steps: [
-                'Analyze revenue drop causes',
-                'Launch targeted marketing campaigns',
-                'Implement retention strategies',
-                'Review pricing strategy'
+                'Increase marketing budget allocation',
+                'Expand to new markets',
+                'Hire additional sales staff',
+                'Develop new product features',
+                'Implement customer success programs'
               ],
-              resources: ['Marketing team', 'Sales team', 'Data analyst'],
-              timeline: '2-4 weeks',
+              resources: ['Marketing budget', 'Sales team', 'Product team', 'Customer success'],
+              timeline: '4-6 weeks',
+              riskLevel: 'low',
+              automatable: false
+            }
+          ],
+          dataPoints: [revenue, performance],
+          trend: 'improving',
+          estimatedROI: '$50,000-100,000 quarterly growth',
+          timeframe: '90 days',
+          tags: ['revenue', 'opportunity', 'scaling']
+        });
+      }
+      
+      // Conversion rate analysis
+      if (conversion_rate < 0.03) {
+        insights.push({
+          id: 'conversion-critical',
+          type: 'critical',
+          severity: 'high',
+          title: 'Critical Conversion Rate Issue',
+          description: `Conversion rate at ${(conversion_rate * 100).toFixed(1)}% is critically low`,
+          impact: 'Significant revenue loss due to poor conversion performance',
+          confidence: 0.94,
+          recommendations: [
+            {
+              id: 'conversion-optimization-urgent',
+              action: 'Urgent conversion rate optimization',
+              priority: 'urgent',
+              effort: 'high',
+              estimatedImpact: '50-100% conversion improvement',
+              steps: [
+                'A/B test all landing page elements',
+                'Optimize checkout flow',
+                'Improve page load speeds',
+                'Enhance user experience',
+                'Implement exit-intent popups'
+              ],
+              resources: ['UX team', 'Development team', 'Marketing team'],
+              timeline: '2-3 weeks',
               riskLevel: 'medium',
               automatable: false
             }
           ],
-          dataPoints: [revenue, trend],
+          dataPoints: [conversion_rate, performance],
           trend: 'declining',
-          estimatedROI: '$10,000-25,000 monthly',
+          estimatedROI: '$20,000-40,000 monthly revenue increase',
           timeframe: '30 days',
-          tags: ['revenue', 'performance', 'growth']
+          tags: ['conversion', 'critical', 'optimization']
+        });
+      } else if (conversion_rate > 0.08) {
+        insights.push({
+          id: 'conversion-opportunity',
+          type: 'opportunity',
+          severity: 'medium',
+          title: 'High Conversion Rate Opportunity',
+          description: `Conversion rate at ${(conversion_rate * 100).toFixed(1)}% is excellent`,
+          impact: 'Opportunity to increase ad spend and scale successful campaigns',
+          confidence: 0.87,
+          recommendations: [
+            {
+              id: 'scale-conversion-success',
+              action: 'Scale high-converting campaigns',
+              priority: 'high',
+              effort: 'medium',
+              estimatedImpact: '30-50% revenue growth',
+              steps: [
+                'Increase ad spend on high-performing channels',
+                'Scale successful campaigns',
+                'Optimize for higher-value conversions',
+                'Implement retargeting campaigns',
+                'Develop new conversion channels'
+              ],
+              resources: ['Marketing budget', 'Ad platforms', 'Analytics team'],
+              timeline: '3-4 weeks',
+              riskLevel: 'low',
+              automatable: false
+            }
+          ],
+          dataPoints: [conversion_rate, performance],
+          trend: 'improving',
+          estimatedROI: '$30,000-60,000 monthly revenue increase',
+          timeframe: '60 days',
+          tags: ['conversion', 'opportunity', 'scaling']
+        });
+      }
+      
+      // User acquisition analysis
+      if (user_acquisition < 50) {
+        insights.push({
+          id: 'acquisition-critical',
+          type: 'warning',
+          severity: 'high',
+          title: 'User Acquisition Decline',
+          description: `User acquisition at ${user_acquisition} users is 50% below target`,
+          impact: 'Growth momentum is slowing, need to revitalize acquisition strategies',
+          confidence: 0.85,
+          recommendations: [
+            {
+              id: 'acquisition-recovery',
+              action: 'Revitalize user acquisition strategies',
+              priority: 'high',
+              effort: 'medium',
+              estimatedImpact: '40-80% acquisition improvement',
+              steps: [
+                'Review and optimize marketing channels',
+                'Implement referral programs',
+                'Launch new marketing campaigns',
+                'Improve SEO and content marketing',
+                'Explore new acquisition channels'
+              ],
+              resources: ['Marketing team', 'Growth team', 'Content team'],
+              timeline: '3-4 weeks',
+              riskLevel: 'medium',
+              automatable: false
+            }
+          ],
+          dataPoints: [user_acquisition, performance],
+          trend: 'declining',
+          estimatedROI: '$25,000-50,000 monthly value',
+          timeframe: '45 days',
+          tags: ['acquisition', 'growth', 'marketing']
+        });
+      } else if (user_acquisition > 200) {
+        insights.push({
+          id: 'acquisition-opportunity',
+          type: 'opportunity',
+          severity: 'medium',
+          title: 'Strong User Growth Momentum',
+          description: `User acquisition at ${user_acquisition} users exceeds targets by 100%`,
+          impact: 'Excellent growth trajectory, opportunity to expand market reach',
+          confidence: 0.90,
+          recommendations: [
+            {
+              id: 'scale-acquisition-success',
+              action: 'Scale successful acquisition channels',
+              priority: 'high',
+              effort: 'medium',
+              estimatedImpact: '60-100% growth acceleration',
+              steps: [
+                'Increase budget for top-performing channels',
+                'Expand to new geographic markets',
+                'Develop strategic partnerships',
+                'Implement viral growth features',
+                'Scale successful campaigns'
+              ],
+              resources: ['Marketing budget', 'Growth team', 'Partnerships team'],
+              timeline: '4-6 weeks',
+              riskLevel: 'low',
+              automatable: false
+            }
+          ],
+          dataPoints: [user_acquisition, performance],
+          trend: 'improving',
+          estimatedROI: '$40,000-80,000 monthly value',
+          timeframe: '60 days',
+          tags: ['acquisition', 'opportunity', 'scaling']
         });
       }
     }

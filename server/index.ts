@@ -148,6 +148,42 @@ app.post('/api/agents/:agentType/configure', (req, res) => {
   });
 });
 
+// Get AI report for agent
+app.get('/api/agents/:agentType/report', (req, res) => {
+  try {
+    const { agentType } = req.params;
+    const agent = agentManager.getAgent(agentType as any);
+    
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Agent not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Get the last AI report from the agent
+    const lastReport = agent.getLastReport();
+    
+    if (!lastReport) {
+      return res.status(404).json({
+        success: false,
+        message: 'No AI report available for this agent',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json(lastReport);
+  } catch (error) {
+    console.error('Error fetching AI report:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch AI report',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Metrics endpoints
 app.get('/api/metrics/system', (req, res) => {
   const metrics = healthMetrics.getLatestMetrics();

@@ -24,6 +24,16 @@ interface Agent {
   };
 }
 
+interface ActivityEvent {
+  id: string;
+  timestamp: Date;
+  type: 'agent_start' | 'agent_stop' | 'agent_success' | 'agent_error' | 'config_update';
+  agentId?: string;
+  agentName?: string;
+  message: string;
+  details?: any;
+}
+
 // Real API functions
 async function fetchAgents(): Promise<Agent[]> {
   try {
@@ -67,8 +77,37 @@ async function stopAgent(agentType: string): Promise<boolean> {
   }
 }
 
+async function configureAgent(agentType: string, config: any): Promise<boolean> {
+  try {
+    const apiUrl = configManager.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/agents/${agentType}/configure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Failed to configure agent:', error);
+    return false;
+  }
+}
+
+async function fetchActivityLog(): Promise<ActivityEvent[]> {
+  try {
+    const apiUrl = configManager.getApiUrl();
+    const response = await fetch(`${apiUrl}/api/dashboard/logs`);
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Failed to fetch activity log:', error);
+    return [];
+  }
+}
+
 export function Dashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const queryClient = useQueryClient();
 
   const { data: agents = [], isLoading, error } = useQuery({
@@ -77,17 +116,62 @@ export function Dashboard() {
     refetchInterval: 5000 // Refetch every 5 seconds
   });
 
+  const { data: activityLog = [] } = useQuery({
+    queryKey: ['activity-log'],
+    queryFn: fetchActivityLog,
+    refetchInterval: 10000 // Refetch every 10 seconds
+  });
+
   const startMutation = useMutation({
     mutationFn: startAgent,
-    onSuccess: () => {
+    onSuccess: (_, agentType) => {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
+      // Add activity event
+      const agent = agents.find(a => a.type === agentType);
+      setActivityEvents(prev => [{
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        type: 'agent_start',
+        agentId: agentType,
+        agentName: agent?.name,
+        message: `${agent?.name || agentType} started monitoring`
+      }, ...prev.slice(0, 49)]); // Keep last 50 events
     }
   });
 
   const stopMutation = useMutation({
     mutationFn: stopAgent,
-    onSuccess: () => {
+    onSuccess: (_, agentType) => {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
+      // Add activity event
+      const agent = agents.find(a => a.type === agentType);
+      setActivityEvents(prev => [{
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        type: 'agent_stop',
+        agentId: agentType,
+        agentName: agent?.name,
+        message: `${agent?.name || agentType} stopped monitoring`
+      }, ...prev.slice(0, 49)]);
+    }
+  });
+
+  const configureMutation = useMutation({
+    mutationFn: ({ agentType, config }: { agentType: string; config: any }) => 
+      configureAgent(agentType, config),
+    onSuccess: (_, { agentType, config }) => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      // Add activity event
+      const agent = agents.find(a => a.type === agentType);
+      setActivityEvents(prev => [{
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        type: 'config_update',
+        agentId: agentType,
+        agentName: agent?.name,
+        message: `${agent?.name || agentType} configuration updated`,
+        details: config
+      }, ...prev.slice(0, 49)]);
     }
   });
 
@@ -99,10 +183,15 @@ export function Dashboard() {
     stopMutation.mutate(agentType);
   };
 
-  const handleConfigureAgent = (agentType: string) => {
-    // TODO: Implement configuration modal
-    console.log('Configure agent:', agentType);
+  const handleConfigureAgent = (config: any) => {
+    const agentType = config.id;
+    configureMutation.mutate({ agentType, config });
   };
+
+  // Combine server activity log with local events
+  const allActivityEvents = [...activityEvents, ...activityLog].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 
   if (error) {
     return (
@@ -154,8 +243,8 @@ export function Dashboard() {
                   )}
                   onStart={() => handleStartAgent(agent.type)}
                   onStop={() => handleStopAgent(agent.type)}
-                  onConfigure={() => handleConfigureAgent(agent.type)}
-                  isLoading={startMutation.isPending || stopMutation.isPending}
+                  onConfigure={handleConfigureAgent}
+                  isLoading={startMutation.isPending || stopMutation.isPending || configureMutation.isPending}
                 />
               ))}
             </div>
@@ -165,7 +254,7 @@ export function Dashboard() {
         {/* Activity Log */}
         <section>
           <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
-          <ActivityLog />
+          <ActivityLog events={allActivityEvents} />
         </section>
       </main>
     </div>

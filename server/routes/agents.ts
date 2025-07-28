@@ -1,113 +1,152 @@
-import { Router } from 'express';
+import express from 'express';
+import { AgentManager } from '../agents/AgentManager.js';
 import { AgentType } from '../../shared/types.js';
 
-// Import AgentManager directly instead of from index to avoid circular dependencies
-import { AgentManager } from '../agents/AgentManager.js';
-
-export const agentRoutes = Router();
-
-// Create a placeholder for agentManager - this will be injected by the main server
 let agentManager: AgentManager;
 
-export const setAgentManager = (manager: AgentManager) => {
+export function setAgentManager(manager: AgentManager) {
   agentManager = manager;
-};
+}
+
+export const agentRoutes = express.Router();
 
 // Get all agents
-agentRoutes.get('/', (req, res) => {
+agentRoutes.get('/', async (req, res) => {
   try {
     const agents = agentManager.getAllAgents();
-    res.json({ success: true, data: agents, timestamp: new Date().toISOString() });
+    res.json({
+      success: true,
+      data: agents,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('Error fetching agents:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch agents',
+      timestamp: new Date().toISOString()
     });
   }
 });
 
 // Get specific agent
-agentRoutes.get('/:type', (req, res) => {
+agentRoutes.get('/:type', async (req, res) => {
   try {
-    const agentType = req.params.type as AgentType;
+    const { type } = req.params;
+    const agentType = type as AgentType;
     const status = agentManager.getAgentStatus(agentType);
     
     if (!status) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agent not found', 
-        timestamp: new Date().toISOString() 
+      return res.status(404).json({
+        success: false,
+        message: 'Agent not found',
+        timestamp: new Date().toISOString()
       });
     }
     
-    res.json({ success: true, data: { type: agentType, status }, timestamp: new Date().toISOString() });
+    res.json({
+      success: true,
+      data: { type: agentType, status },
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('Error fetching agent:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch agent',
+      timestamp: new Date().toISOString()
     });
   }
 });
 
 // Start agent
-agentRoutes.post('/:type/start', (req, res) => {
+agentRoutes.post('/:type/start', async (req, res) => {
   try {
-    const agentType = req.params.type as AgentType;
+    const { type } = req.params;
+    const agentType = type as AgentType;
     const success = agentManager.startAgent(agentType, 'api-request');
     
-    res.json({ 
-      success, 
-      message: success ? 'Agent started successfully' : 'Failed to start agent',
-      timestamp: new Date().toISOString() 
-    });
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Agent started successfully',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to start agent',
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('Error starting agent:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to start agent',
+      timestamp: new Date().toISOString()
     });
   }
 });
 
 // Stop agent
-agentRoutes.post('/:type/stop', (req, res) => {
+agentRoutes.post('/:type/stop', async (req, res) => {
   try {
-    const agentType = req.params.type as AgentType;
+    const { type } = req.params;
+    const agentType = type as AgentType;
     const success = agentManager.stopAgent(agentType, 'api-request');
     
-    res.json({ 
-      success, 
-      message: success ? 'Agent stopped successfully' : 'Failed to stop agent',
-      timestamp: new Date().toISOString() 
-    });
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Agent stopped successfully',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to stop agent',
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('Error stopping agent:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to stop agent',
+      timestamp: new Date().toISOString()
     });
   }
 });
 
 // Configure agent
-agentRoutes.put('/:type/config', (req, res) => {
+agentRoutes.post('/:type/configure', async (req, res) => {
   try {
-    const agentType = req.params.type as AgentType;
+    const { type } = req.params;
+    const agentType = type as AgentType;
     const config = req.body;
+    
     const success = agentManager.configureAgent(agentType, config);
     
-    res.json({ 
-      success, 
-      message: success ? 'Agent configured successfully' : 'Failed to configure agent',
-      timestamp: new Date().toISOString() 
-    });
+    if (success) {
+      res.json({
+        success: true,
+        message: 'Agent configured successfully',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to configure agent',
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error', 
-      timestamp: new Date().toISOString() 
+    console.error('Error configuring agent:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to configure agent',
+      timestamp: new Date().toISOString()
     });
   }
 });

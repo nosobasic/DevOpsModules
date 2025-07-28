@@ -1,58 +1,27 @@
 import { formatDistanceToNow } from 'date-fns';
 
-interface Activity {
+interface ActivityEvent {
   id: string;
-  type: 'agent_start' | 'agent_stop' | 'metric_update' | 'error' | 'success';
-  agent: string;
+  timestamp: Date;
+  type: 'agent_start' | 'agent_stop' | 'agent_success' | 'agent_error' | 'config_update' | 'metric_update' | 'error' | 'success';
+  agentId?: string;
+  agentName?: string;
   message: string;
-  timestamp: string;
+  details?: any;
 }
 
-// Mock activity data
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'success',
-    agent: 'kpi-tracker',
-    message: 'KPI Tracker completed data collection successfully',
-    timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString()
-  },
-  {
-    id: '2',
-    type: 'agent_start',
-    agent: 'revenue-ripple',
-    message: 'Revenue Ripple Tracker started monitoring',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString()
-  },
-  {
-    id: '3',
-    type: 'metric_update',
-    agent: 'ab-optimizer',
-    message: 'A/B test results updated - Test #AB-2024-001 completed',
-    timestamp: new Date(Date.now() - 8 * 60 * 1000).toISOString()
-  },
-  {
-    id: '4',
-    type: 'error',
-    agent: 'funnel-tester',
-    message: 'Connection timeout to analytics API',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString()
-  },
-  {
-    id: '5',
-    type: 'agent_stop',
-    agent: 'webhook-validator',
-    message: 'Webhook Validator stopped by user',
-    timestamp: new Date(Date.now() - 22 * 60 * 1000).toISOString()
-  }
-];
+interface ActivityLogProps {
+  events?: ActivityEvent[];
+}
 
-export function ActivityLog() {
+export function ActivityLog({ events = [] }: ActivityLogProps) {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'success':
+      case 'agent_success':
         return '✅';
       case 'error':
+      case 'agent_error':
         return '❌';
       case 'agent_start':
         return '🚀';
@@ -60,6 +29,8 @@ export function ActivityLog() {
         return '🛑';
       case 'metric_update':
         return '📊';
+      case 'config_update':
+        return '⚙️';
       default:
         return 'ℹ️';
     }
@@ -68,8 +39,10 @@ export function ActivityLog() {
   const getActivityColor = (type: string) => {
     switch (type) {
       case 'success':
+      case 'agent_success':
         return 'text-green-600';
       case 'error':
+      case 'agent_error':
         return 'text-red-600';
       case 'agent_start':
         return 'text-blue-600';
@@ -77,8 +50,29 @@ export function ActivityLog() {
         return 'text-gray-600';
       case 'metric_update':
         return 'text-purple-600';
+      case 'config_update':
+        return 'text-orange-600';
       default:
         return 'text-gray-500';
+    }
+  };
+
+  const getActivityType = (type: string) => {
+    switch (type) {
+      case 'agent_start':
+        return 'AGENT START';
+      case 'agent_stop':
+        return 'AGENT STOP';
+      case 'agent_success':
+        return 'SUCCESS';
+      case 'agent_error':
+        return 'ERROR';
+      case 'config_update':
+        return 'CONFIG UPDATE';
+      case 'metric_update':
+        return 'METRIC UPDATE';
+      default:
+        return type.toUpperCase();
     }
   };
 
@@ -93,41 +87,45 @@ export function ActivityLog() {
         </div>
         
         <div className="space-y-4">
-          {mockActivities.map((activity) => (
-            <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-              <div className="text-lg flex-shrink-0">
-                {getActivityIcon(activity.type)}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">
-                    {activity.message}
-                  </p>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                  </span>
+          {events.length > 0 ? (
+            events.map((event) => (
+              <div key={event.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="text-lg flex-shrink-0">
+                  {getActivityIcon(event.type)}
                 </div>
                 
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className={`text-xs font-medium ${getActivityColor(activity.type)}`}>
-                    {activity.type.replace('_', ' ').toUpperCase()}
-                  </span>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-xs text-muted-foreground">
-                    {activity.agent}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-foreground">
+                      {event.message}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(event.timestamp, { addSuffix: true })}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className={`text-xs font-medium ${getActivityColor(event.type)}`}>
+                      {getActivityType(event.type)}
+                    </span>
+                    {event.agentName && (
+                      <>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          {event.agentName}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No recent activity</p>
             </div>
-          ))}
+          )}
         </div>
-        
-        {mockActivities.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No recent activity</p>
-          </div>
-        )}
       </div>
     </div>
   );

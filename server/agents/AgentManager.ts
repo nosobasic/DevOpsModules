@@ -153,6 +153,10 @@ export class AgentManager {
     }));
   }
 
+  public getAgent(agentType: AgentType): any {
+    return this.agents.get(agentType);
+  }
+
   public handleDisconnect(connectionId: string) {
     const activeAgents = this.activeConnections.get(connectionId) || [];
     

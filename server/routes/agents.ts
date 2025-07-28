@@ -150,3 +150,40 @@ agentRoutes.post('/:type/configure', async (req, res) => {
     });
   }
 });
+
+// Get AI report for agent
+agentRoutes.get('/:type/report', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const agentType = type as AgentType;
+    const agent = agentManager.getAgent(agentType);
+    
+    if (!agent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Agent not found',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Get the last AI report from the agent
+    const lastReport = agent.getLastReport();
+    
+    if (!lastReport) {
+      return res.status(404).json({
+        success: false,
+        message: 'No AI report available for this agent',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    res.json(lastReport);
+  } catch (error) {
+    console.error('Error fetching AI report:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch AI report',
+      timestamp: new Date().toISOString()
+    });
+  }
+});

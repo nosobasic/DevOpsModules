@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { ConfigModal } from './ConfigModal';
+import { AIInsightsPanel } from './AIInsightsPanel';
 
 interface Agent {
   id: string;
@@ -37,6 +38,7 @@ export function AgentCard({
   isLoading = false 
 }: AgentCardProps) {
   const [showConfig, setShowConfig] = useState(false);
+  const [showAIInsights, setShowAIInsights] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -81,6 +83,11 @@ export function AgentCard({
   const handleConfigureClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowConfig(true);
+  };
+
+  const handleAIInsightsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowAIInsights(true);
   };
 
   const handleConfigSave = async (config: any) => {
@@ -172,6 +179,14 @@ export function AgentCard({
           >
             ⚙️
           </button>
+          <button 
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+            onClick={handleAIInsightsClick}
+            disabled={isLoading}
+            title="AI Insights"
+          >
+            🤖
+          </button>
         </div>
       </div>
 
@@ -186,6 +201,13 @@ export function AgentCard({
         isOpen={showConfig}
         onClose={() => setShowConfig(false)}
         onSave={handleConfigSave}
+      />
+      
+      <AIInsightsPanel
+        agentId={agent.id}
+        agentName={agent.name}
+        isOpen={showAIInsights}
+        onClose={() => setShowAIInsights(false)}
       />
     </>
   );

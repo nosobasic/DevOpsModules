@@ -1,12 +1,33 @@
 import { Server } from 'socket.io';
 import { Agent, AgentType, AgentStatus } from '../../shared/types.js';
+// Active Monitoring Agents
 import { KPITrackerAgent } from './KPITrackerAgent.js';
 import { RevenueRippleAgent } from './RevenueRippleAgent.js';
-import { ABOptimizerAgent } from './ABOptimizerAgent.js';
 import { FunnelTesterAgent } from './FunnelTesterAgent.js';
-import { AdGeneratorAgent } from './AdGeneratorAgent.js';
-import { WebhookValidatorAgent } from './WebhookValidatorAgent.js';
 import { DailyPulseAgent } from './DailyPulseAgent.js';
+import { WebhookValidatorAgent } from './WebhookValidatorAgent.js';
+
+// Optimization & Testing Agents
+import { ABOptimizerAgent } from './ABOptimizerAgent.js';
+import { EmailSplitTesterAgent } from './EmailSplitTesterAgent.js';
+import { AdGeneratorAgent } from './AdGeneratorAgent.js';
+import { AudienceRefinerAgent } from './AudienceRefinerAgent.js';
+
+// Development & Operations Agents
+import { BugWatcherAgent } from './BugWatcherAgent.js';
+import { AutoDocGeneratorAgent } from './AutoDocGeneratorAgent.js';
+import { AuthFlowBotAgent } from './AuthFlowBotAgent.js';
+import { DeployBotAgent } from './DeployBotAgent.js';
+
+// Customer Intelligence Agents
+import { LTVPredictorAgent } from './LTVPredictorAgent.js';
+import { ChurnDetectorAgent } from './ChurnDetectorAgent.js';
+import { OnboardingCoachAgent } from './OnboardingCoachAgent.js';
+import { SupportConciergeAgent } from './SupportConciergeAgent.js';
+import { UpsellRecommenderAgent } from './UpsellRecommenderAgent.js';
+
+// System Monitoring Agents
+import { HealthMonitorAgent } from './HealthMonitorAgent.js';
 
 export class AgentManager {
   private agents: Map<AgentType, any> = new Map();
@@ -19,14 +40,34 @@ export class AgentManager {
   }
 
   private initializeAgents() {
-    // Initialize all available agents
+    // Active Monitoring Agents
     this.agents.set(AgentType.KPI_TRACKER, new KPITrackerAgent(this.io));
     this.agents.set(AgentType.REVENUE_RIPPLE, new RevenueRippleAgent(this.io));
-    this.agents.set(AgentType.AB_OPTIMIZER, new ABOptimizerAgent(this.io));
     this.agents.set(AgentType.FUNNEL_TESTER, new FunnelTesterAgent(this.io));
-    this.agents.set(AgentType.AD_GENERATOR, new AdGeneratorAgent(this.io));
-    this.agents.set(AgentType.WEBHOOK_VALIDATOR, new WebhookValidatorAgent(this.io));
     this.agents.set(AgentType.DAILY_PULSE, new DailyPulseAgent(this.io));
+    this.agents.set(AgentType.WEBHOOK_VALIDATOR, new WebhookValidatorAgent(this.io));
+    
+    // Optimization & Testing Agents
+    this.agents.set(AgentType.AB_OPTIMIZER, new ABOptimizerAgent(this.io));
+    this.agents.set(AgentType.EMAIL_SPLIT_TESTER, new EmailSplitTesterAgent(this.io));
+    this.agents.set(AgentType.AD_GENERATOR, new AdGeneratorAgent(this.io));
+    this.agents.set(AgentType.AUDIENCE_REFINER, new AudienceRefinerAgent(this.io));
+    
+    // Development & Operations Agents
+    this.agents.set(AgentType.BUG_WATCHER, new BugWatcherAgent(this.io));
+    this.agents.set(AgentType.AUTO_DOC_GENERATOR, new AutoDocGeneratorAgent(this.io));
+    this.agents.set(AgentType.AUTH_FLOW_BOT, new AuthFlowBotAgent(this.io));
+    this.agents.set(AgentType.DEPLOY_BOT, new DeployBotAgent(this.io));
+    
+    // Customer Intelligence Agents
+    this.agents.set(AgentType.LTV_PREDICTOR, new LTVPredictorAgent(this.io));
+    this.agents.set(AgentType.CHURN_DETECTOR, new ChurnDetectorAgent(this.io));
+    this.agents.set(AgentType.ONBOARDING_COACH, new OnboardingCoachAgent(this.io));
+    this.agents.set(AgentType.SUPPORT_CONCIERGE, new SupportConciergeAgent(this.io));
+    this.agents.set(AgentType.UPSELL_RECOMMENDER, new UpsellRecommenderAgent(this.io));
+    
+    // System Monitoring Agents
+    this.agents.set(AgentType.HEALTH_MONITOR, new HealthMonitorAgent(this.io));
   }
 
   public startAgent(agentType: AgentType, connectionId: string): boolean {

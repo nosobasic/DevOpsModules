@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "start": "tsx server/index.ts",
     "start:production": "NODE_ENV=production tsx server/index.ts",
+    "start:render": "NODE_ENV=production tsx server/index.ts",
     "deploy": "npm run build:production && npm start:production",
     "test": "echo 'No tests configured yet'"
   },

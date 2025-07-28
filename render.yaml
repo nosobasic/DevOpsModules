@@ -3,20 +3,20 @@ services:
     name: devops-modules-api
     env: node
     plan: starter
-    buildCommand: npm install && npm run build:server
-    startCommand: npm run start:production
+    buildCommand: npm install
+    startCommand: npm run start:render
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: CLIENT_URL
-        value: https://dev-ops-modules-508gpxf5m-nosobasics-projects.vercel.app
+        value: https://dev-ops-modules.vercel.app
       - key: REACT_APP_REVENUE_RIPPLE_URL
-        sync: false
+        value: https://revenueripple.org
       - key: REACT_APP_REVENUE_RIPPLE_API_KEY
-        sync: false
+        value: rr_u_5n6KxpNEx2hsa32s3_gfGgVIo5hjfC2esJr7CBPtk
       - key: WEBHOOK_SECRET
         generateValue: true
       - key: OPENAI_API_KEY
-        sync: false 
+        value: your_openai_api_key_here 

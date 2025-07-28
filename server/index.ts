@@ -184,6 +184,16 @@ app.get('/api/agents/:agentType/report', (req, res) => {
   }
 });
 
+// Dashboard logs endpoint
+app.get('/api/dashboard/logs', (req, res) => {
+  // Return empty logs for now - this can be enhanced later
+  res.json({
+    success: true,
+    data: [],
+    timestamp: new Date()
+  });
+});
+
 // Metrics endpoints
 app.get('/api/metrics/system', (req, res) => {
   const metrics = healthMetrics.getLatestMetrics();

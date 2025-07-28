@@ -16,9 +16,12 @@ export class DeployBotAgent extends BaseAgent {
         notification_channels: ['slack', 'email']
       }
     });
+
+    // Enable self-healing for this agent
+    this.enableSelfHealing();
   }
 
-  async execute(): Promise<void> {
+  async execute(): Promise<any> {
     // Check deployment status across environments
     const deploymentStatus = await this.checkDeploymentStatus();
     
@@ -31,10 +34,15 @@ export class DeployBotAgent extends BaseAgent {
     // Check for rollback conditions
     const rollbackStatus = await this.checkRollbackConditions(healthChecks);
     
+    // Auto-healing: Execute rollback if conditions are met
+    if (this.selfHealing && rollbackStatus.shouldRollback) {
+      await this.executeAutoRollback(rollbackStatus);
+    }
+    
     // Generate deployment recommendations
     const recommendations = await this.generateDeploymentRecommendations(deploymentMetrics);
 
-    this.emit('data', {
+    const deployData = {
       timestamp: new Date(),
       deploymentStatus,
       healthChecks,
@@ -43,7 +51,12 @@ export class DeployBotAgent extends BaseAgent {
       recommendations,
       environmentHealth: this.calculateEnvironmentHealth(healthChecks),
       recentDeployments: this.deploymentHistory.slice(-5)
-    });
+    };
+
+    this.emit('data', deployData);
+    
+    // Return data for AI analysis
+    return deployData;
   }
 
   private async checkDeploymentStatus(): Promise<any> {
@@ -206,6 +219,98 @@ export class DeployBotAgent extends BaseAgent {
         'Update status page'
       ]
     };
+  }
+
+  private async executeAutoRollback(rollbackStatus: any): Promise<void> {
+    try {
+      console.log('🔧 Deploy Bot executing automatic rollback...');
+      
+      // Determine which environment needs rollback
+      const environment = this.determineRollbackEnvironment(rollbackStatus.triggers);
+      
+      // Execute rollback steps
+      await this.switchTrafficToPreviousVersion(environment);
+      await this.verifyApplicationHealth(environment);
+      await this.notifyTeam(environment, rollbackStatus.triggers);
+      
+      // Record rollback in history
+      this.deploymentHistory.push({
+        type: 'rollback',
+        environment,
+        timestamp: new Date(),
+        reason: 'Auto-rollback triggered',
+        triggers: rollbackStatus.triggers
+      });
+
+      this.emit('auto-rollback-completed', {
+        environment,
+        reason: rollbackStatus.triggers.map((t: any) => t.trigger).join(', '),
+        timestamp: new Date()
+      });
+
+      console.log(`✅ Automatic rollback completed for ${environment}`);
+      
+    } catch (error) {
+      console.error('❌ Auto-rollback failed:', error);
+      
+      this.emit('auto-rollback-failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date()
+      });
+    }
+  }
+
+  private determineRollbackEnvironment(triggers: any[]): string {
+    // Prioritize production rollbacks
+    if (triggers.some(t => t.environment === 'production')) {
+      return 'production';
+    }
+    
+    // Then staging
+    if (triggers.some(t => t.environment === 'staging')) {
+      return 'staging';
+    }
+    
+    return 'development';
+  }
+
+  private async switchTrafficToPreviousVersion(environment: string): Promise<void> {
+    console.log(`🔄 Switching ${environment} traffic to previous version...`);
+    
+    // Simulate traffic switching
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    this.emit('traffic-switched', {
+      environment,
+      action: 'rollback_to_previous',
+      timestamp: new Date()
+    });
+  }
+
+  private async verifyApplicationHealth(environment: string): Promise<void> {
+    console.log(`🔍 Verifying ${environment} application health after rollback...`);
+    
+    // Simulate health verification
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    this.emit('health-verified', {
+      environment,
+      status: 'healthy',
+      timestamp: new Date()
+    });
+  }
+
+  private async notifyTeam(environment: string, triggers: any[]): Promise<void> {
+    console.log(`📢 Notifying team about ${environment} rollback...`);
+    
+    // Simulate team notification
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    this.emit('team-notified', {
+      environment,
+      triggers: triggers.map(t => t.trigger),
+      timestamp: new Date()
+    });
   }
 
   private calculateEnvironmentHealth(healthChecks: any): number {

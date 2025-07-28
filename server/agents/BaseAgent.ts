@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { AgentStatus, AgentConfig, AgentMetrics } from '../../shared/types.js';
 import { RateLimiter, RateLimiterFactory } from '../utils/RateLimiter.js';
+import { aiInsightsEngine, AgentReport } from '../utils/AIInsightsEngine.js';
 
 export abstract class BaseAgent {
   protected id: string;
@@ -13,6 +14,8 @@ export abstract class BaseAgent {
   protected lastRun?: Date;
   protected nextRun?: Date;
   protected rateLimiter?: RateLimiter;
+  protected lastReport?: AgentReport;
+  protected selfHealing: boolean = false;
 
   constructor(id: string, name: string, io: Server, config: AgentConfig = { settings: {} }) {
     this.id = id;
@@ -30,7 +33,7 @@ export abstract class BaseAgent {
     this.rateLimiter = RateLimiterFactory.createAgentLimiter(io);
   }
 
-  abstract execute(): Promise<void>;
+  abstract execute(): Promise<any>;
 
   public start(): void {
     if (this.status === AgentStatus.ACTIVE || this.status === AgentStatus.RUNNING) {
@@ -92,6 +95,67 @@ export abstract class BaseAgent {
     return this.rateLimiter?.getInfo(this.id) || null;
   }
 
+  public getLastReport(): AgentReport | undefined {
+    return this.lastReport;
+  }
+
+  public enableSelfHealing(): void {
+    this.selfHealing = true;
+    console.log(`🤖 Self-healing enabled for ${this.name}`);
+  }
+
+  public disableSelfHealing(): void {
+    this.selfHealing = false;
+    console.log(`🤖 Self-healing disabled for ${this.name}`);
+  }
+
+  protected generateAIReport(data: any): AgentReport {
+    const report = aiInsightsEngine.generateReport(this.id, this.name, data);
+    this.lastReport = report;
+    
+    // Emit the report
+    this.emit('ai-report', report);
+    
+    return report;
+  }
+
+  protected async handleAutoFix(report: AgentReport): Promise<void> {
+    if (!this.selfHealing || !report.nextRecommendedAction?.autoFix) {
+      return;
+    }
+
+    const action = report.nextRecommendedAction;
+    console.log(`🔧 ${this.name} attempting auto-fix: ${action.action}`);
+    
+    try {
+      const success = await action.autoFix();
+      
+      if (success) {
+        console.log(`✅ ${this.name} auto-fix successful: ${action.action}`);
+        this.emit('auto-fix-success', {
+          agent: this.id,
+          action: action.action,
+          timestamp: new Date()
+        });
+      } else {
+        console.log(`❌ ${this.name} auto-fix failed: ${action.action}`);
+        this.emit('auto-fix-failed', {
+          agent: this.id,
+          action: action.action,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      console.error(`💥 ${this.name} auto-fix error:`, error);
+      this.emit('auto-fix-error', {
+        agent: this.id,
+        action: action.action,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date()
+      });
+    }
+  }
+
   protected scheduleNextRun(): void {
     const interval = this.config.interval || 60000; // Default 1 minute
     this.nextRun = new Date(Date.now() + interval);
@@ -125,11 +189,20 @@ export abstract class BaseAgent {
     this.lastRun = new Date();
 
     try {
-      await this.execute();
+      const executionData = await this.execute();
       this.metrics.runs++;
       
       const executionTime = Date.now() - startTime;
       this.updateMetrics(true, executionTime);
+      
+      // Generate AI report if execution returned data
+      let report: AgentReport | undefined;
+      if (executionData) {
+        report = this.generateAIReport(executionData);
+        
+        // Handle auto-fix if self-healing is enabled
+        await this.handleAutoFix(report);
+      }
       
       this.status = AgentStatus.ACTIVE;
       console.log(`✅ ${this.name} execution completed in ${executionTime}ms`);

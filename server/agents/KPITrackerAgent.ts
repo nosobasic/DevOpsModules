@@ -16,7 +16,7 @@ export class KPITrackerAgent extends BaseAgent {
     });
   }
 
-  async execute(): Promise<void> {
+  async execute(): Promise<any> {
     // Simulate KPI data collection
     const kpis = this.config.settings.kpis || [];
     const data: Record<string, number> = {};
@@ -29,12 +29,17 @@ export class KPITrackerAgent extends BaseAgent {
     // Check thresholds and emit alerts if needed
     this.checkThresholds(data);
 
-    // Emit the collected data
-    this.emit('data', {
+    const kpiData = {
       timestamp: new Date(),
       kpis: data,
       trend: this.calculateTrend(data)
-    });
+    };
+
+    // Emit the collected data
+    this.emit('data', kpiData);
+    
+    // Return data for AI analysis
+    return kpiData;
   }
 
   private generateMockKPIValue(kpi: string): number {

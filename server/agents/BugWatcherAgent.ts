@@ -20,9 +20,12 @@ export class BugWatcherAgent extends BaseAgent {
         notification_channels: ['slack', 'email', 'dashboard']
       }
     });
+
+    // Enable self-healing for this agent
+    this.enableSelfHealing();
   }
 
-  async execute(): Promise<void> {
+  async execute(): Promise<any> {
     // Monitor application logs
     const logErrors = await this.scanApplicationLogs();
     
@@ -38,15 +41,27 @@ export class BugWatcherAgent extends BaseAgent {
     // Check system health indicators
     const healthStatus = await this.checkSystemHealth();
 
-    this.emit('data', {
+    // Auto-healing: Triage critical bugs if self-healing is enabled
+    const criticalBugs = bugReports.filter(b => b.severity === 'critical');
+    if (this.selfHealing && criticalBugs.length > 0) {
+      await this.autoTriageCriticalBugs(criticalBugs);
+    }
+
+    const bugData = {
       timestamp: new Date(),
       totalErrors: logErrors.length + userReports.length,
-      criticalBugs: bugReports.filter(b => b.severity === 'critical').length,
+      criticalBugs: criticalBugs.length,
       errorPatterns: patterns,
       systemHealth: healthStatus,
       recentBugs: bugReports.slice(0, 5),
+      bugReports,
       recommendations: this.generateRecommendations(patterns, healthStatus)
-    });
+    };
+
+    this.emit('data', bugData);
+    
+    // Return data for AI analysis
+    return bugData;
   }
 
   private async scanApplicationLogs(): Promise<any[]> {
@@ -188,6 +203,109 @@ export class BugWatcherAgent extends BaseAgent {
     if (totalUsers > 100) return 'high';
     if (totalUsers > 20) return 'medium';
     return 'low';
+  }
+
+  private async autoTriageCriticalBugs(criticalBugs: any[]): Promise<void> {
+    console.log(`🔧 Bug Watcher auto-triaging ${criticalBugs.length} critical bugs...`);
+
+    for (const bug of criticalBugs) {
+      try {
+        // Auto-assign to appropriate team
+        const team = this.determineAssigneeTeam(bug);
+        
+        // Create emergency ticket
+        await this.createEmergencyTicket(bug, team);
+        
+        // Notify stakeholders
+        await this.notifyStakeholders(bug, team);
+        
+        // Attempt automatic workaround if possible
+        if (bug.tags.includes('database')) {
+          await this.applyDatabaseWorkaround(bug);
+        } else if (bug.tags.includes('api')) {
+          await this.applyApiWorkaround(bug);
+        }
+
+        this.emit('bug-triaged', {
+          bugId: bug.id,
+          assignedTeam: team,
+          severity: bug.severity,
+          timestamp: new Date()
+        });
+
+      } catch (error) {
+        console.error(`Failed to auto-triage bug ${bug.id}:`, error);
+      }
+    }
+
+    this.emit('auto-healing', {
+      action: 'bug_triage',
+      bugsProcessed: criticalBugs.length,
+      status: 'completed',
+      timestamp: new Date()
+    });
+
+    console.log('✅ Critical bug auto-triage completed');
+  }
+
+  private determineAssigneeTeam(bug: any): string {
+    if (bug.tags.includes('database')) return 'backend-team';
+    if (bug.tags.includes('api')) return 'backend-team';
+    if (bug.tags.includes('frontend')) return 'frontend-team';
+    if (bug.tags.includes('payment')) return 'payments-team';
+    return 'general-dev-team';
+  }
+
+  private async createEmergencyTicket(bug: any, team: string): Promise<void> {
+    // Simulate ticket creation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log(`📋 Emergency ticket created for ${bug.title} -> ${team}`);
+  }
+
+  private async notifyStakeholders(bug: any, team: string): Promise<void> {
+    // Simulate notifications
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    console.log(`📢 Stakeholders notified about critical bug: ${bug.title}`);
+  }
+
+  private async applyDatabaseWorkaround(bug: any): Promise<void> {
+    try {
+      console.log(`🔧 Applying database workaround for: ${bug.title}`);
+      
+      // Simulate database workaround
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      this.emit('workaround-applied', {
+        bugId: bug.id,
+        type: 'database',
+        timestamp: new Date()
+      });
+      
+      console.log('✅ Database workaround applied');
+    } catch (error) {
+      console.error('❌ Database workaround failed:', error);
+    }
+  }
+
+  private async applyApiWorkaround(bug: any): Promise<void> {
+    try {
+      console.log(`🔧 Applying API workaround for: ${bug.title}`);
+      
+      // Simulate API workaround (e.g., circuit breaker, retry logic)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      this.emit('workaround-applied', {
+        bugId: bug.id,
+        type: 'api',
+        timestamp: new Date()
+      });
+      
+      console.log('✅ API workaround applied');
+    } catch (error) {
+      console.error('❌ API workaround failed:', error);
+    }
   }
 
   private generateRecommendations(patterns: any[], healthStatus: any): string[] {

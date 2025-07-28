@@ -5,6 +5,7 @@ import cors from 'cors';
 import { AgentManager } from './agents/AgentManager.js';
 import { healthMetrics } from './utils/HealthMetrics.js';
 import { RateLimiterFactory } from './utils/RateLimiter.js';
+import { aiInsightsEngine } from './utils/AIInsightsEngine.js';
 
 const app = express();
 const server = createServer(app);
@@ -59,6 +60,9 @@ app.use('/auth/', createRateLimitMiddleware(authLimiter, (req) => req.ip || 'unk
 
 // Initialize systems
 const agentManager = new AgentManager(io);
+
+// Initialize AI insights engine with WebSocket support
+aiInsightsEngine['io'] = io;
 
 // Start health metrics collection
 healthMetrics.startCollection(30000); // Every 30 seconds

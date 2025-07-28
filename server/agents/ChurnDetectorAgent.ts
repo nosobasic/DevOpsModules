@@ -19,9 +19,12 @@ export class ChurnDetectorAgent extends BaseAgent {
         confidence_threshold: 0.75
       }
     });
+
+    // Enable self-healing for this agent
+    this.enableSelfHealing();
   }
 
-  async execute(): Promise<void> {
+  async execute(): Promise<any> {
     // Analyze customer risk levels
     const riskAnalysis = await this.analyzeCustomerRisk();
     
@@ -37,16 +40,29 @@ export class ChurnDetectorAgent extends BaseAgent {
     // Analyze churn patterns
     const churnPatterns = await this.analyzeChurnPatterns();
 
-    this.emit('data', {
+    // Auto-healing: Trigger interventions for high-risk customers
+    const highRiskCustomers = atRiskCustomers.filter(c => c.riskLevel === 'high');
+    if (this.selfHealing && highRiskCustomers.length > 5) {
+      await this.autoTriggerRetentionCampaigns(highRiskCustomers);
+    }
+
+    const churnData = {
       timestamp: new Date(),
       totalAtRisk: atRiskCustomers.length,
       riskDistribution: riskAnalysis.distribution,
-      highRiskCustomers: atRiskCustomers.filter(c => c.riskLevel === 'high').length,
+      highRiskCustomers: highRiskCustomers.length,
       interventionSuccess: interventionResults.successRate,
       churnPredictionAccuracy: interventionResults.accuracy,
       topRiskFactors: churnPatterns.topFactors,
+      atRiskCustomers,
+      interventions,
       recommendations: this.generateChurnRecommendations(riskAnalysis, interventionResults)
-    });
+    };
+
+    this.emit('data', churnData);
+    
+    // Return data for AI analysis
+    return churnData;
   }
 
   private async analyzeCustomerRisk(): Promise<any> {
@@ -228,6 +244,98 @@ export class ChurnDetectorAgent extends BaseAgent {
     if (daysUntilChurn <= 14) return 'within_week';
     if (daysUntilChurn <= 30) return 'within_month';
     return 'monitor';
+  }
+
+  private async autoTriggerRetentionCampaigns(highRiskCustomers: any[]): Promise<void> {
+    try {
+      console.log(`🔧 Churn Detector auto-triggering retention campaigns for ${highRiskCustomers.length} high-risk customers...`);
+
+      for (const customer of highRiskCustomers) {
+        // Determine best intervention strategy
+        const strategy = this.selectOptimalStrategy(customer);
+        
+        // Execute intervention
+        await this.executeIntervention(customer, strategy);
+        
+        // Schedule follow-up
+        await this.scheduleFollowUp(customer);
+
+        this.emit('intervention-triggered', {
+          customerId: customer.customerId,
+          strategy: strategy.type,
+          riskScore: customer.riskScore,
+          timestamp: new Date()
+        });
+      }
+
+      this.emit('auto-healing', {
+        action: 'retention_campaigns',
+        customersTargeted: highRiskCustomers.length,
+        status: 'completed',
+        timestamp: new Date()
+      });
+
+      console.log('✅ Retention campaigns auto-triggered');
+      
+    } catch (error) {
+      console.error('❌ Auto-trigger retention campaigns failed:', error);
+    }
+  }
+
+  private selectOptimalStrategy(customer: any): any {
+    const strategies = {
+      payment_failed: {
+        type: 'billing_assistance',
+        message: 'Payment support and flexible options',
+        discount: 0.15
+      },
+      low_engagement: {
+        type: 'feature_highlight',
+        message: 'Discover unused features',
+        bonus: 'premium_trial'
+      },
+      support_issues: {
+        type: 'priority_support',
+        message: 'Personal success manager assignment',
+        escalation: true
+      },
+      default: {
+        type: 'retention_offer',
+        message: 'Exclusive customer loyalty discount',
+        discount: 0.10
+      }
+    };
+
+    // Select strategy based on primary risk factor
+    const primaryRisk = customer.riskFactors[0];
+    return strategies[primaryRisk as keyof typeof strategies] || strategies.default;
+  }
+
+  private async executeIntervention(customer: any, strategy: any): Promise<void> {
+    console.log(`📧 Executing ${strategy.type} intervention for customer ${customer.customerId}`);
+    
+    // Simulate intervention execution
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    this.emit('intervention-executed', {
+      customerId: customer.customerId,
+      intervention: strategy.type,
+      details: strategy,
+      timestamp: new Date()
+    });
+  }
+
+  private async scheduleFollowUp(customer: any): Promise<void> {
+    console.log(`📅 Scheduling follow-up for customer ${customer.customerId}`);
+    
+    // Simulate follow-up scheduling
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    this.emit('followup-scheduled', {
+      customerId: customer.customerId,
+      scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      timestamp: new Date()
+    });
   }
 
   private generateChurnRecommendations(riskAnalysis: any, interventionResults: any): string[] {

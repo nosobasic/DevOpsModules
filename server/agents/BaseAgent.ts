@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { AgentStatus, AgentConfig, AgentMetrics } from '../../shared/types.js';
+import { RateLimiter, RateLimiterFactory } from '../utils/RateLimiter.js';
 
 export abstract class BaseAgent {
   protected id: string;
@@ -11,6 +12,7 @@ export abstract class BaseAgent {
   protected intervalId?: NodeJS.Timeout;
   protected lastRun?: Date;
   protected nextRun?: Date;
+  protected rateLimiter?: RateLimiter;
 
   constructor(id: string, name: string, io: Server, config: AgentConfig = { settings: {} }) {
     this.id = id;
@@ -23,6 +25,9 @@ export abstract class BaseAgent {
       averageRunTime: 0,
       dataPoints: []
     };
+
+    // Initialize rate limiter for this agent
+    this.rateLimiter = RateLimiterFactory.createAgentLimiter(io);
   }
 
   abstract execute(): Promise<void>;
@@ -83,6 +88,10 @@ export abstract class BaseAgent {
     return this.nextRun;
   }
 
+  public getRateLimitInfo(): any {
+    return this.rateLimiter?.getInfo(this.id) || null;
+  }
+
   protected scheduleNextRun(): void {
     const interval = this.config.interval || 60000; // Default 1 minute
     this.nextRun = new Date(Date.now() + interval);
@@ -95,6 +104,20 @@ export abstract class BaseAgent {
   protected async runExecution(): Promise<void> {
     if (this.status !== AgentStatus.ACTIVE) {
       return;
+    }
+
+    // Check rate limit before execution
+    if (this.rateLimiter) {
+      const rateLimitInfo = await this.rateLimiter.checkLimit(this.id);
+      if (rateLimitInfo.isBlocked) {
+        console.warn(`⚠️ ${this.name} rate limited - skipping execution`);
+        this.emit('rate-limited', {
+          agent: this.id,
+          remaining: rateLimitInfo.remaining,
+          resetTime: rateLimitInfo.resetTime
+        });
+        return;
+      }
     }
 
     const startTime = Date.now();
@@ -115,6 +138,13 @@ export abstract class BaseAgent {
       this.metrics.lastError = error instanceof Error ? error.message : 'Unknown error';
       this.updateMetrics(false, Date.now() - startTime);
       this.status = AgentStatus.ERROR;
+      
+      // Emit error event
+      this.emit('error', {
+        agent: this.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date()
+      });
     }
 
     this.scheduleNextRun();
@@ -143,9 +173,59 @@ export abstract class BaseAgent {
     if (this.metrics.dataPoints.length > 100) {
       this.metrics.dataPoints = this.metrics.dataPoints.slice(-100);
     }
+
+    // Emit metrics update
+    this.emit('metrics-updated', {
+      agent: this.id,
+      metrics: this.metrics,
+      rateLimitInfo: this.getRateLimitInfo()
+    });
   }
 
   protected emit(event: string, data: any): void {
     this.io.emit(`agent:${this.id}:${event}`, data);
+  }
+
+  // Helper method for external API calls with rate limiting
+  protected async makeAPICall(
+    apiName: string, 
+    apiCall: () => Promise<any>, 
+    maxRequests: number = 100, 
+    windowMs: number = 60000
+  ): Promise<any> {
+    const apiLimiter = RateLimiterFactory.createExternalAPILimiter(
+      apiName, 
+      maxRequests, 
+      windowMs, 
+      this.io
+    );
+
+    const rateLimitInfo = await apiLimiter.checkLimit(`${this.id}:${apiName}`);
+    
+    if (rateLimitInfo.isBlocked) {
+      throw new Error(`Rate limit exceeded for ${apiName}. Try again at ${rateLimitInfo.resetTime}`);
+    }
+
+    try {
+      const result = await apiCall();
+      
+      // Emit successful API call metric
+      this.emit('api-call-success', {
+        api: apiName,
+        remaining: rateLimitInfo.remaining,
+        resetTime: rateLimitInfo.resetTime
+      });
+      
+      return result;
+    } catch (error) {
+      // Emit failed API call metric
+      this.emit('api-call-failed', {
+        api: apiName,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        remaining: rateLimitInfo.remaining
+      });
+      
+      throw error;
+    }
   }
 }

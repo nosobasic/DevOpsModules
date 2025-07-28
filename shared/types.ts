@@ -11,13 +11,34 @@ export interface Agent {
 }
 
 export const AgentType = {
+  // Active Monitoring Agents
   KPI_TRACKER: 'kpi-tracker',
   REVENUE_RIPPLE: 'revenue-ripple',
-  AB_OPTIMIZER: 'ab-optimizer',
   FUNNEL_TESTER: 'funnel-tester',
-  AD_GENERATOR: 'ad-generator',
+  DAILY_PULSE: 'daily-pulse',
   WEBHOOK_VALIDATOR: 'webhook-validator',
-  DAILY_PULSE: 'daily-pulse'
+  
+  // Optimization & Testing Agents
+  AB_OPTIMIZER: 'ab-optimizer',
+  EMAIL_SPLIT_TESTER: 'email-split-tester',
+  AD_GENERATOR: 'ad-generator',
+  AUDIENCE_REFINER: 'audience-refiner',
+  
+  // Development & Operations Agents
+  BUG_WATCHER: 'bug-watcher',
+  AUTO_DOC_GENERATOR: 'auto-doc-generator',
+  AUTH_FLOW_BOT: 'auth-flow-bot',
+  DEPLOY_BOT: 'deploy-bot',
+  
+  // Customer Intelligence Agents
+  LTV_PREDICTOR: 'ltv-predictor',
+  CHURN_DETECTOR: 'churn-detector',
+  ONBOARDING_COACH: 'onboarding-coach',
+  SUPPORT_CONCIERGE: 'support-concierge',
+  UPSELL_RECOMMENDER: 'upsell-recommender',
+  
+  // System Monitoring Agents
+  HEALTH_MONITOR: 'health-monitor'
 } as const;
 
 export type AgentType = typeof AgentType[keyof typeof AgentType];

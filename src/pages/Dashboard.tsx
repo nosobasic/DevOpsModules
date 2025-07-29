@@ -5,6 +5,8 @@ import { MetricsOverview } from '../components/dashboard/MetricsOverview';
 import { ActivityLog } from '../components/dashboard/ActivityLog';
 import { Header } from '../components/dashboard/Header';
 import { SettingsPanel } from '../components/dashboard/SettingsPanel';
+import { UpsellModal } from '../components/dashboard/UpsellModal';
+import { UpsellSidebar } from '../components/dashboard/UpsellSidebar';
 import { AgentType } from '../../shared/types';
 import { configManager } from '../lib/config';
 
@@ -110,6 +112,10 @@ export function Dashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const [upsellType, setUpsellType] = useState<'ai-tracker' | 'revenue-ripple' | 'bundle' | 'upgrade'>('bundle');
+  const [upsellTrigger, setUpsellTrigger] = useState('');
+  const [userActions, setUserActions] = useState<string[]>([]);
   const [alerts, setAlerts] = useState([
     {
       id: '1',
@@ -284,6 +290,45 @@ export function Dashboard() {
     ));
   };
 
+  const handleUpsellClick = (type: 'ai-tracker' | 'revenue-ripple' | 'bundle' | 'upgrade', trigger: string) => {
+    setUpsellType(type);
+    setUpsellTrigger(trigger);
+    setShowUpsellModal(true);
+    
+    // Track user action for personalization
+    setUserActions(prev => [...prev, `upsell-${type}-${trigger}`]);
+  };
+
+  // Track user behavior for smart upsells
+  useEffect(() => {
+    const activeAgentCount = agents.filter(agent => 
+      agent.status === 'active' || agent.status === 'running'
+    ).length;
+    
+    if (activeAgentCount >= 8) {
+      setUserActions(prev => [...prev, 'high-agent-usage']);
+    }
+    
+    // Show bundle upsell after 5 minutes of high usage
+    if (activeAgentCount >= 8) {
+      const timer = setTimeout(() => {
+        handleUpsellClick('bundle', 'high-usage-timer');
+      }, 5 * 60 * 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [agents]);
+
+  // Check for new user and show welcome upsell
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('newUser') === 'true') {
+      setTimeout(() => {
+        handleUpsellClick('bundle', 'new-user-welcome');
+      }, 10000); // Show after 10 seconds
+    }
+  }, []);
+
   // Combine server activity log with local events
   const allActivityEvents = [...activityEvents, ...activityLog].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -364,6 +409,21 @@ export function Dashboard() {
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={handleSaveSettings}
+      />
+
+      {/* Upsell Modal */}
+      <UpsellModal
+        isOpen={showUpsellModal}
+        onClose={() => setShowUpsellModal(false)}
+        type={upsellType}
+        trigger={upsellTrigger}
+      />
+
+      {/* Upsell Sidebar */}
+      <UpsellSidebar
+        currentProduct="command-center"
+        userActions={userActions}
+        onUpsellClick={handleUpsellClick}
       />
     </div>
   );
